@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Testament } from '@/domain/schema';
 import { bookInfo, booksOf } from '@/io/books';
 import { useAppStore } from '@/state/store';
+import { useSheetDrag } from './useSheetDrag';
 
 /**
  * Book/chapter selector — a modal sheet with a testament segmented control,
@@ -15,6 +16,8 @@ export function BookPicker() {
   const [testament, setTestament] = useState<Testament>(currentTestament);
   const [bookNum, setBookNum] = useState<number | null>(null);
 
+  const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
+
   const book = bookNum != null ? bookInfo(testament, bookNum) : undefined;
 
   return (
@@ -24,21 +27,10 @@ export function BookPicker() {
         role="dialog"
         aria-label="Choose book and chapter"
         onClick={(e) => e.stopPropagation()}
+        style={sheetStyle}
       >
-        <div className="grabber" aria-hidden="true" />
+        <div className="grabber" {...grabberProps} />
         <div className="segmented" role="tablist" aria-label="Testament">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={testament === 'gnt'}
-            className={testament === 'gnt' ? 'on' : ''}
-            onClick={() => {
-              setTestament('gnt');
-              setBookNum(null);
-            }}
-          >
-            Greek NT
-          </button>
           <button
             type="button"
             role="tab"
@@ -50,6 +42,18 @@ export function BookPicker() {
             }}
           >
             Hebrew OT
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={testament === 'gnt'}
+            className={testament === 'gnt' ? 'on' : ''}
+            onClick={() => {
+              setTestament('gnt');
+              setBookNum(null);
+            }}
+          >
+            Greek NT
           </button>
         </div>
 

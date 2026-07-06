@@ -10,6 +10,8 @@ is included, and none may be added except BSB or ASV (see ADR-0001).
 | Hebrew OT text + morphology (WLC Lowfat) | [Clear-Bible/macula-hebrew](https://github.com/Clear-Bible/macula-hebrew) `WLC/lowfat/` | MACULA Hebrew: CC BY 4.0; Westminster Leningrad Codex: public domain | Fetched per chapter on demand; Genesis 1 bundled as fixture (`public/fixtures/ot/`) |
 | Strong's lexicon (Greek + Hebrew, compact JSON) | James Strong, Exhaustive Concordance (1890, public domain) via the Open Scriptures machine-readable edition; compact JSON as prepared in hutima/ScriptureDiagrammer `public/lexicon/` | Open Scriptures edition: CC BY-SA | Bundled (`public/lexicon/`, ~1.2 MB), fetched on demand at runtime, never precached |
 | English glosses / transliterations | Token-level `gloss`/`english`/`transliteration` attributes inside the MACULA files above | Same as their containing corpus (CC BY 4.0) | Gloss display mode; token detail panel |
+| Gentium Book Plus (scripture face — Greek) | SIL International, via the `@fontsource/gentium-book-plus` package | SIL Open Font License 1.1 (`src/fonts/Gentium-Book-Plus-OFL.txt`) | Vendored woff2 (greek + greek-ext subsets, weights 400/700) in `src/fonts/`; scripture text and the logo Α/Ω |
+| Source Sans 3 / Source Sans Pro (UI face) | Adobe / SIL, via the `@fontsource/source-sans-3` package | SIL Open Font License 1.1 (`src/fonts/Source-Sans-3-OFL.txt`) | Vendored woff2 (latin + latin-ext subsets, weights 400/600/700) in `src/fonts/`; all non-scripture UI text |
 
 Provenance notes:
 

@@ -3,24 +3,43 @@
   --fg: #1f2933;
   --muted: #52606d;
   --line: #d9e2ec;
-  --accent: #2b6cb0;
-  --accent-soft: #ebf4ff;
+  --accent: #b90e31;
+  --accent-soft: #fdeaee;
   --panel: #ffffff;
   --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
   /* iOS HIG: minimum comfortable touch target. */
   --touch: 44px;
+  /* Reading font-size multiplier (Settings → reading size; not viewport zoom). */
+  --reading-scale: 1;
   color-scheme: light dark;
 }
+
+/* Dark palette. Shared by the explicit override and the system-dark default;
+   an explicit `data-theme` on <html> (Settings → theme) beats the OS query. */
+:root[data-theme='dark'] {
+  --bg: #15191e;
+  --fg: #e4e7eb;
+  --muted: #9aa5b1;
+  --line: #323f4b;
+  --accent: #f06a86;
+  --accent-soft: #3a1622;
+  --panel: #1f2933;
+  color-scheme: dark;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #15191e;
     --fg: #e4e7eb;
     --muted: #9aa5b1;
     --line: #323f4b;
-    --accent: #63b3ed;
-    --accent-soft: #1a2c3d;
+    --accent: #f06a86;
+    --accent-soft: #3a1622;
     --panel: #1f2933;
+    color-scheme: dark;
   }
+}
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 * {
@@ -35,9 +54,11 @@ body,
 body {
   background: var(--bg);
   color: var(--fg);
-  /* iOS HIG: the system type stack (SF on Apple platforms). */
+  /* UI / non-scripture text: Source Sans 3 (self-hosted), then the system
+     stack (SF on Apple platforms) as fallback. */
   font:
-    17px/1.65 -apple-system,
+    17px/1.65 'Source Sans 3',
+    -apple-system,
     BlinkMacSystemFont,
     system-ui,
     'Segoe UI',
@@ -54,14 +75,16 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Original-language font stacks: legible diacritics / vowel points. */
+/* Scripture text: Gentium Book Plus (self-hosted) first, then legible
+   diacritic / vowel-point fallbacks. Gentium covers Greek; Hebrew falls
+   through to a Hebrew face per glyph. */
 .grc {
-  font-family: 'SBL Greek', 'Gentium Plus', Gentium, 'Palatino Linotype', Palatino, Georgia,
-    serif;
+  font-family: 'Gentium Book Plus', 'SBL Greek', 'Gentium Plus', Gentium, 'Palatino Linotype',
+    Palatino, Georgia, serif;
 }
 .hbo {
-  font-family: 'SBL Hebrew', 'Ezra SIL', 'Taamey Frank CLM', 'Arial Hebrew', 'Times New Roman',
-    serif;
+  font-family: 'Gentium Book Plus', 'SBL Hebrew', 'Ezra SIL', 'Taamey Frank CLM', 'Arial Hebrew',
+    'Times New Roman', serif;
   direction: rtl;
   unicode-bidi: isolate;
 }
@@ -186,12 +209,13 @@ button {
 }
 .verses {
   margin: 0;
-  font-size: 1.25rem;
+  /* Reading size scales via the CSS var (Settings), never viewport zoom. */
+  font-size: calc(1.25rem * var(--reading-scale, 1));
   line-height: 2.1;
 }
 .hbo-chapter .verses {
   direction: rtl;
-  font-size: 1.45rem;
+  font-size: calc(1.45rem * var(--reading-scale, 1));
 }
 .verse-num {
   color: var(--accent);
@@ -201,10 +225,36 @@ button {
   user-select: none;
 }
 .token {
+  position: relative;
   border-radius: 6px;
   padding: 0 0.08em;
   margin: 0 -0.08em;
   line-height: inherit;
+  /* Long-press reveals the gloss; suppress the iOS text-callout/selection. */
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+/* Gloss bubble shown on tap-hold (src/ui/TokenSpan.tsx). */
+.gloss-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -6px);
+  background: var(--fg);
+  color: var(--bg);
+  direction: ltr;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  max-width: 62vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
+  z-index: 20;
+  pointer-events: none;
 }
 .token:active {
   background: var(--accent-soft);
@@ -516,4 +566,154 @@ button.hit:active {
   .panel-sheet .grabber {
     display: none;
   }
+}
+
+/* --- Glossable values (help affordance) ----------------------------------- */
+/* Morph code + part of speech in the detail panel: a dotted underline and a
+   question-mark cursor signal an explanatory tooltip (title). */
+.glossable {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--muted);
+  cursor: help;
+}
+
+/* --- Modal (mandatory update overlay) ------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem
+    max(1.5rem, env(safe-area-inset-bottom));
+}
+.modal {
+  background: var(--panel);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  max-width: 26rem;
+  width: 100%;
+  padding: 1.25rem 1.25rem 1rem;
+}
+.modal-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+.modal .hint {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+.modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.mini {
+  min-height: var(--touch);
+  padding: 0 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--fg);
+  font-weight: 600;
+}
+.mini:active {
+  opacity: 0.8;
+}
+.mini.accept {
+  flex: 1;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.mini.reject {
+  color: #c53030;
+  border-color: #c53030;
+}
+.mini:disabled {
+  opacity: 0.5;
+}
+.status-line {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0.4rem 0 0;
+}
+
+/* --- Settings sheet ------------------------------------------------------- */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: 0.25rem 0 0.5rem;
+}
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.settings-section > h3 {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--touch);
+}
+.settings-row .label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.settings-row .label small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.stepper button {
+  width: var(--touch);
+  height: var(--touch);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.stepper button:active {
+  background: var(--accent-soft);
+}
+.stepper button:disabled {
+  opacity: 0.4;
+}
+.stepper .value {
+  min-width: 3.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.settings-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0;
 }

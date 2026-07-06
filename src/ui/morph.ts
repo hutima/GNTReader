@@ -79,6 +79,57 @@ export function posLabel(pos: PartOfSpeech | undefined): string {
   return pos ? POS_LABEL[pos] : '—';
 }
 
+/** Plain-language definition of a part of speech, for the help tooltip. */
+const POS_HELP: Record<PartOfSpeech, string> = {
+  noun: 'Names a person, place, thing, or idea.',
+  propernoun: 'A name — a specific person or place.',
+  pronoun: 'Stands in for a noun (I, you, he, this, who).',
+  verb: 'Expresses an action or a state of being.',
+  participle: 'A verbal adjective (an “-ing/-ed” form) that can modify a noun.',
+  infinitive: 'The unmarked verbal noun (“to …”).',
+  adjective: 'Describes or qualifies a noun.',
+  adverb: 'Modifies a verb, an adjective, or another adverb.',
+  article: 'The definite article (“the”).',
+  preposition: 'Relates a noun/pronoun to another word (in, with, through).',
+  conjunction: 'Joins words, phrases, or clauses (and, but, because).',
+  particle: 'A small function word (negation, emphasis) that does not inflect.',
+  interjection: 'An exclamation (e.g. “behold!”).',
+  numeral: 'A number word.',
+  determiner: 'Specifies a noun (this, some, each).',
+  unknown: 'Part of speech not classified in the source.',
+};
+
+export function posHelp(pos: PartOfSpeech | undefined): string {
+  return pos ? (POS_HELP[pos] ?? '') : '';
+}
+
+/** Human-readable expansion of a token's parse, for the morph-code tooltip. */
+export function describeMorph(token: ReadingToken): string {
+  const parts: string[] = [];
+  const label = posLabel(token.pos);
+  if (label && label !== '—') parts.push(label);
+  const m = token.morphology;
+  if (m) {
+    for (const v of [
+      m.tense,
+      m.voice,
+      m.mood,
+      m.case,
+      m.gender,
+      m.number,
+      m.person,
+      m.state,
+      m.degree,
+    ]) {
+      if (v) parts.push(v);
+    }
+    if (m.extra?.stem) parts.push(m.extra.stem);
+    if (m.extra?.type) parts.push(m.extra.type);
+    if (m.extra?.lang === 'A') parts.push('Aramaic');
+  }
+  return parts.join(' · ');
+}
+
 function abbr(v: string): string {
   return ABBR[v] ?? v;
 }

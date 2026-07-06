@@ -30,7 +30,7 @@ export default defineConfig({
         short_name: 'GNT Reader',
         description:
           'Read the Greek New Testament and Hebrew Old Testament with morphology, glosses, and Strong’s — offline-capable.',
-        theme_color: '#1f2933',
+        theme_color: '#b90e31',
         background_color: '#f5f7fa',
         display: 'standalone',
         orientation: 'any',

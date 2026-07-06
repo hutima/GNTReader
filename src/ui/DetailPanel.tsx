@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { loadStrongs, strongsEntry, type StrongsEntry } from '@/io/strongs';
 import { useAppStore } from '@/state/store';
 import { useIsMobile } from './useViewport';
-import { displayGloss, morphChips, posLabel } from './morph';
+import { describeMorph, displayGloss, morphChips, posHelp, posLabel } from './morph';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
@@ -84,7 +84,15 @@ export function DetailPanel() {
         </div>
         <div className="row">
           <dt>Part of speech</dt>
-          <dd>{posLabel(token.pos)}</dd>
+          <dd>
+            {token.pos ? (
+              <span className="glossable" title={posHelp(token.pos)}>
+                {posLabel(token.pos)}
+              </span>
+            ) : (
+              posLabel(token.pos)
+            )}
+          </dd>
         </div>
         <div className="row">
           <dt>Parsing</dt>
@@ -106,7 +114,9 @@ export function DetailPanel() {
           <div className="row">
             <dt>Morph code</dt>
             <dd>
-              <code>{token.morphology.extra.morph}</code>
+              <code className="glossable" title={describeMorph(token) || undefined}>
+                {token.morphology.extra.morph}
+              </code>
             </dd>
           </div>
         )}

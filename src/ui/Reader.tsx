@@ -6,11 +6,17 @@ import { useAppStore } from '@/state/store';
 import { VerseView } from './VerseView';
 
 /**
- * Continuous-scroll reading surface. Renders a contiguous chapter range of
- * the current book; IntersectionObserver sentinels extend the range, the
- * loader prefetches adjacent chapters, and prepends preserve the scroll
- * position (scrollTop compensated in a layout effect before paint).
+ * Continuous-scroll reading surface. Keeps a sliding WINDOW of chapters around
+ * the reading position (the visible chapter ± WINDOW_RADIUS); IntersectionObserver
+ * sentinels extend the range and chapters that fall outside the window are
+ * dropped so a long session never grows unbounded. Every range change is made
+ * invisible to the reader by anchoring the top-most visible chapter and
+ * restoring its position in a layout effect before paint (Safari/iOS has no
+ * native scroll anchoring).
  */
+const WINDOW_RADIUS = 2;
+const MAX_LOADED = WINDOW_RADIUS * 2 + 1; // visible chapter ± 2 → at most 5
+
 export function Reader() {
   const { testament, bookNum, chapter, targetVerse, displayMode, selectedToken } = useAppStore();
   const selectToken = useAppStore((s) => s.selectToken);
@@ -25,17 +31,36 @@ export function Reader() {
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const seq = useRef(0);
   const busyRef = useRef(false);
-  /** Set before a prepend; consumed by the layout effect to keep the view still. */
-  const prependHeightRef = useRef<number | null>(null);
+  /** Chapter <article> elements by chapter number, for scroll-anchor math. */
+  const articleRefs = useRef(new Map<number, HTMLElement>());
+  /** Anchor captured before a range mutation; consumed by the layout effect. */
+  const anchorRef = useRef<{ chapter: number; top: number } | null>(null);
 
   const book = bookInfo(testament, bookNum);
   const maxChapter = book?.chapters ?? 1;
+
+  /** Record the top-most visible chapter and its offset so a prepend or a trim
+   *  can keep it fixed on screen. Reads the currently-committed layout. */
+  const captureAnchor = useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const sTop = scroller.getBoundingClientRect().top;
+    const entries = [...articleRefs.current.entries()].sort((a, b) => a[0] - b[0]);
+    for (const [chapterNum, el] of entries) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom > sTop + 1) {
+        anchorRef.current = { chapter: chapterNum, top: r.top - sTop };
+        return;
+      }
+    }
+    anchorRef.current = null;
+  }, []);
 
   // Anchor load: navigation resets the range to the selected chapter.
   useEffect(() => {
     const mySeq = ++seq.current;
     busyRef.current = false;
-    prependHeightRef.current = null;
+    anchorRef.current = null;
     setLoading(true);
     setError(null);
     loadChapter(testament, bookNum, chapter)
@@ -65,16 +90,24 @@ export function Reader() {
         void loadChapter(testament, bookNum, next)
           .then((ch) => {
             if (seq.current !== mySeq) return;
-            if (direction === 'up') {
-              prependHeightRef.current = scrollerRef.current?.scrollHeight ?? null;
-            }
             setChapters((cs) => {
               // The range may have been reset while we were loading.
               if (!cs.length) return cs;
-              if (direction === 'up' && cs[0]!.chapter === next + 1) return [ch, ...cs];
-              if (direction === 'down' && cs[cs.length - 1]!.chapter === next - 1)
-                return [...cs, ch];
-              return cs;
+              let out: ReadingChapter[];
+              if (direction === 'up' && cs[0]!.chapter === next + 1) out = [ch, ...cs];
+              else if (direction === 'down' && cs[cs.length - 1]!.chapter === next - 1)
+                out = [...cs, ch];
+              else return cs;
+              // Drop chapters that fell outside the window, from the far end.
+              if (out.length > MAX_LOADED) {
+                out =
+                  direction === 'up'
+                    ? out.slice(0, MAX_LOADED)
+                    : out.slice(out.length - MAX_LOADED);
+              }
+              // Read the pre-mutation layout so the effect can keep it still.
+              captureAnchor();
+              return out;
             });
             prefetchAdjacent(testament, bookNum, next);
           })
@@ -87,16 +120,20 @@ export function Reader() {
         return current;
       });
     },
-    [testament, bookNum, maxChapter],
+    [testament, bookNum, maxChapter, captureAnchor],
   );
 
-  // Keep the viewport still when content is prepended above it.
+  // Keep the anchored chapter visually fixed across prepends and trims.
   useLayoutEffect(() => {
-    const prevHeight = prependHeightRef.current;
+    const anchor = anchorRef.current;
     const scroller = scrollerRef.current;
-    if (prevHeight != null && scroller) {
-      scroller.scrollTop += scroller.scrollHeight - prevHeight;
-      prependHeightRef.current = null;
+    if (anchor && scroller) {
+      const el = articleRefs.current.get(anchor.chapter);
+      if (el) {
+        const newTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        scroller.scrollTop += newTop - anchor.top;
+      }
+      anchorRef.current = null;
     }
   }, [chapters]);
 
@@ -156,7 +193,16 @@ export function Reader() {
         <>
           <div ref={topSentinelRef} className="sentinel" aria-hidden="true" />
           {chapters.map((data) => (
-            <article key={data.chapter} className={`chapter ${data.language}-chapter`}>
+            <article
+              key={data.chapter}
+              id={`ch-${data.chapter}`}
+              ref={(el) => {
+                const m = articleRefs.current;
+                if (el) m.set(data.chapter, el);
+                else m.delete(data.chapter);
+              }}
+              className={`chapter ${data.language}-chapter`}
+            >
               <h2 className="chapter-heading">
                 {data.book} {data.chapter}
               </h2>

@@ -9,10 +9,13 @@ One row per configuration axis. Precedence: built-in < config file < env var
 | `CORPUS_CACHE` | SW const (`src/sw.ts` + loaders) | `corpus-v1` | `corpus-vN` | active | static check test | app | 2026-07-06 |
 | `DB_NAME` / `DB_VERSION` | idb consts (`src/persistence/db.ts`) | `gnt-reader` / 1 | bump version with schema change | active | unit test | app | 2026-07-06 |
 | Display mode | localStorage `gr:displayMode` | `original` | `original` \| `gloss` \| `both` | active | zod parse w/ fallback | ui | 2026-07-06 |
+| Theme | localStorage `gr:theme` | `system` | `system` \| `light` \| `dark` (sets `data-theme` on `<html>`) | active | zod parse w/ fallback | ui | 2026-07-06 |
+| Reading size | localStorage `gr:readingScale` | `1` | 0.8–1.8, 0.1 step (CSS var `--reading-scale`, not viewport zoom) | active | clamped on load | ui | 2026-07-06 |
 | Last position | localStorage `gr:lastRef` | John 1 | any valid ref | active | zod parse w/ fallback | ui | 2026-07-06 |
 | Search result cap | const `SEARCH_RESULT_CAP` | 300 | int > 0 | active | asserted in tests | search | 2026-07-06 |
 | Strong's result cap | const `STRONGS_RESULT_CAP` | 40 | int > 0 | active | asserted in tests | search | 2026-07-06 |
-| Prefetch radius | const `PREFETCH_CHAPTERS` | 1 | 0-2 | active | asserted in tests | reader | 2026-07-06 |
+| Prefetch radius | const `PREFETCH_CHAPTERS` | 2 | 0-2 | active | asserted in tests | reader | 2026-07-06 |
+| Reader window radius | const `WINDOW_RADIUS` (`src/ui/Reader.tsx`) | 2 | int > 0 (chapters kept each side; far ones dropped) | active | verified-by-reading | reader | 2026-07-06 |
 
 No runtime env vars and no secrets exist in this app (static PWA; all data
 sources are public). `.env` is unused; if one is ever added, commit a

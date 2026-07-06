@@ -1,115 +1,88 @@
-// Generate the PWA icons (192, 512, 512-maskable) without any image
-// dependency: a hand-rolled PNG encoder drawing a rounded-rect "α" glyph
-// approximation as flat pixels. Deterministic output — rerun `npm run icons`
-// only when changing the design, and commit the PNGs.
-import { deflateSync } from 'node:zlib';
-import { writeFileSync, mkdirSync } from 'node:fs';
+// Generate the PWA icons (192, 512, 512-maskable) by rasterising the app mark
+// in public/favicon.svg with headless Chromium. favicon.svg is the single
+// source of truth for the logo (all vector paths — no fonts — so it rasterises
+// identically); this script only composes it onto an opaque tile at each size.
+// iOS home-screen icons must be opaque, hence the white tile. Deterministic
+// output — rerun `npm run icons` after editing favicon.svg, and commit the PNGs.
+//
+// Requires a Chromium/Chrome binary. Resolution order: $CHROME_PATH, the
+// Playwright-managed Chromium under $PLAYWRIGHT_BROWSERS_PATH, then common
+// names on PATH. CI does not run this (icons are committed); it is a local /
+// design-time tool.
+import { writeFileSync, mkdtempSync, readFileSync, rmSync, existsSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'icons');
-mkdirSync(OUT, { recursive: true });
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const OUT = join(ROOT, 'public', 'icons');
+const SVG = readFileSync(join(ROOT, 'public', 'favicon.svg'), 'utf8');
+const TILE = '#ffffff'; // opaque tile behind the (transparent) mark
+// Embed the app's scripture face so the Α/Ω in the mark rasterise identically
+// everywhere (no reliance on a system serif being installed).
+const GENTIUM = join(ROOT, 'src', 'fonts', 'gentium-book-plus-greek-400-normal.woff2');
+const FONT_FACE = `@font-face{font-family:'Gentium Book Plus';font-style:normal;font-weight:400;src:url('file://${GENTIUM}') format('woff2');}`;
 
-const BG = [0x1f, 0x29, 0x33, 255]; // slate
-const FG = [0xf5, 0xf7, 0xfa, 255]; // near-white
-
-const CRC_TABLE = (() => {
-  const t = new Int32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c;
+function resolveChrome() {
+  const candidates = [];
+  if (process.env.CHROME_PATH) candidates.push(process.env.CHROME_PATH);
+  const pwRoot = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
+  if (existsSync(pwRoot)) {
+    for (const d of readdirSync(pwRoot)) {
+      if (d.startsWith('chromium-')) candidates.push(join(pwRoot, d, 'chrome-linux', 'chrome'));
+    }
   }
-  return t;
-})();
-function crc(buf) {
-  let c = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
+  candidates.push(
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+  );
+  for (const c of candidates) if (c && existsSync(c)) return c;
+  throw new Error(
+    'No Chromium/Chrome found. Set CHROME_PATH to a Chrome binary to run `npm run icons`.',
+  );
 }
 
-function chunk(type, data) {
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length);
-  const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
-  const c = Buffer.alloc(4);
-  c.writeUInt32BE(crc(body));
-  return Buffer.concat([len, body, c]);
+const CHROME = resolveChrome();
+const work = mkdtempSync(join(tmpdir(), 'gnt-icons-'));
+
+/** Rasterise the mark at `size` px, the SVG drawn at `art` px centred on the tile. */
+function render(size, art, outfile) {
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    ${FONT_FACE}
+    html,body{margin:0;padding:0}
+    #t{width:${size}px;height:${size}px;background:${TILE};
+       display:flex;align-items:center;justify-content:center;overflow:hidden}
+    svg{display:block;width:${art}px;height:${art}px}
+  </style></head><body><div id="t">${SVG}</div></body></html>`;
+  const htmlPath = join(work, `icon-${size}-${art}.html`);
+  writeFileSync(htmlPath, html);
+  execFileSync(
+    CHROME,
+    [
+      '--headless',
+      '--no-sandbox',
+      '--disable-gpu',
+      '--hide-scrollbars',
+      '--force-device-scale-factor=1',
+      '--default-background-color=ffffffff',
+      // advance virtual time so the embedded web font finishes loading before capture
+      '--virtual-time-budget=3000',
+      `--screenshot=${join(OUT, outfile)}`,
+      `--window-size=${size},${size}`,
+      `file://${htmlPath}`,
+    ],
+    { stdio: ['ignore', 'ignore', 'ignore'] },
+  );
 }
 
-function png(width, height, pixels /* RGBA rows */) {
-  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0);
-  ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // color type RGBA
-  const raw = Buffer.alloc((width * 4 + 1) * height);
-  for (let y = 0; y < height; y++) {
-    raw[y * (width * 4 + 1)] = 0; // filter none
-    pixels.copy(raw, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
-  }
-  return Buffer.concat([
-    sig,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw)),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
-}
+// "any" icons: the mark fills the tile (it already carries its own margin).
+render(192, 192, 'icon-192.png');
+render(512, 512, 'icon-512.png');
+// maskable: keep the mark inside the ~80% safe zone so platform masks don't clip it.
+render(512, 400, 'icon-512-maskable.png');
 
-/** Draw the icon at `size`; maskable keeps art inside the 40%-radius safe zone. */
-function drawIcon(size, { maskable = false } = {}) {
-  const px = Buffer.alloc(size * size * 4);
-  const put = (x, y, [r, g, b, a]) => {
-    if (x < 0 || y < 0 || x >= size || y >= size) return;
-    const i = (y * size + x) * 4;
-    px[i] = r;
-    px[i + 1] = g;
-    px[i + 2] = b;
-    px[i + 3] = a;
-  };
-  const radius = maskable ? 0 : size * 0.18;
-  const inside = (x, y) => {
-    if (!radius) return true;
-    const rx = Math.max(radius - x, x - (size - 1 - radius), 0);
-    const ry = Math.max(radius - y, y - (size - 1 - radius), 0);
-    return rx * rx + ry * ry <= radius * radius;
-  };
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) put(x, y, inside(x, y) ? BG : [0, 0, 0, 0]);
-
-  // A stylized alpha: a circle plus a tail stroke, drawn as filled discs.
-  const scale = maskable ? 0.62 : 0.8; // maskable safe zone
-  const cx = size * 0.46;
-  const cy = size * 0.54;
-  const R = size * 0.21 * scale;
-  const thick = size * 0.07 * scale;
-  const disc = (x0, y0, r, color) => {
-    for (let y = Math.floor(y0 - r); y <= y0 + r; y++)
-      for (let x = Math.floor(x0 - r); x <= x0 + r; x++) {
-        const d = (x - x0) ** 2 + (y - y0) ** 2;
-        if (d <= r * r) put(x, y, color);
-      }
-  };
-  // ring
-  for (let a = 0; a < 360; a += 0.5) {
-    const rad = (a * Math.PI) / 180;
-    disc(cx + R * Math.cos(rad), cy + R * Math.sin(rad), thick / 2, FG);
-  }
-  // tail: from ring's right edge sweeping down-right
-  const tx0 = cx + R;
-  const ty0 = cy - R * 0.5;
-  const tx1 = cx + R * 1.7;
-  const ty1 = cy + R;
-  for (let t = 0; t <= 1; t += 0.01) {
-    const x = tx0 + (tx1 - tx0) * t;
-    const y = ty0 + (ty1 - ty0) * (t * t * 0.4 + t * 0.6);
-    disc(x, y, thick / 2, FG);
-  }
-  return png(size, size, px);
-}
-
-writeFileSync(join(OUT, 'icon-192.png'), drawIcon(192));
-writeFileSync(join(OUT, 'icon-512.png'), drawIcon(512));
-writeFileSync(join(OUT, 'icon-512-maskable.png'), drawIcon(512, { maskable: true }));
-console.log('icons written to', OUT);
+rmSync(work, { recursive: true, force: true });
+console.log('icons written to', OUT, 'using', CHROME);

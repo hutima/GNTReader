@@ -30,3 +30,25 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
   preservation on prepend (FL-004), adjacent-chapter prefetch, IndexedDB
   normalized-chapter cache; real-browser verification suite
   (docs/verification/browser-smoke.mjs).
+- Branding: new app logo — an open book (Α … Ω) on a phone in brand crimson
+  (#b90e31); vector `favicon.svg` is the single source, PNG icons rasterised
+  from it (`scripts/generate-icons.mjs`, Chromium). Theme colour set to
+  #b90e31 (manifest + meta + accent).
+- Typography: self-hosted webfonts (offline-first, no CDN) — Gentium Book
+  Plus for scripture (Greek), Source Sans 3 (Source Sans Pro) for UI;
+  vendored woff2 subsets in `src/fonts/` under SIL OFL 1.1.
+- Settings sheet (header ⚙️, replacing the Strong's book icon): light/dark/
+  system theme override (`data-theme`), reading font-size control (CSS var
+  `--reading-scale`, iOS-safe — not viewport zoom), one-tap download of the
+  whole GNT+OT corpus for offline use, app update/cache utilities, and the
+  Strong's lexicon entry point.
+- Mandatory PWA update modal (`UpdateModal`) — a click-through "Update
+  available" overlay wired to the hardened SW update flow.
+- Reader: tap-hold a word to reveal its English gloss; windowed continuous
+  scroll (keeps the visible chapter ±2, drops far chapters via scroll-anchor
+  compensation).
+- Search: whole-testament scope (all NT / all OT), streaming book-by-book.
+- Detail panel: part-of-speech and morph-code values carry a dotted
+  underline, help cursor, and explanatory tooltip.
+- Book picker: swipe-down-on-grabber to dismiss the sheet (`useSheetDrag`);
+  testament toggle reordered to Hebrew OT then Greek NT.
