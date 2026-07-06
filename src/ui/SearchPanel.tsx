@@ -10,6 +10,7 @@ import {
 } from '@/search/morphology';
 import { useAppStore } from '@/state/store';
 import { displayGloss, morphChips } from './morph';
+import { useSheetDrag } from './useSheetDrag';
 
 /**
  * Morphology/concordance search over the current book (or chapter). Streams
@@ -76,6 +77,7 @@ export function SearchPanel() {
   const openPanel = useAppStore((s) => s.openPanel);
   const navigate = useAppStore((s) => s.navigate);
   const selectToken = useAppStore((s) => s.selectToken);
+  const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
   const [q, setQ] = useState<SearchQuery>({ field: 'any' });
   const [scope, setScope] = useState<'chapter' | 'book' | 'testament'>('chapter');
@@ -138,9 +140,10 @@ export function SearchPanel() {
         className="panel-sheet"
         role="dialog"
         aria-label="Morphology search"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="grabber" aria-hidden="true" />
+        <div className="grabber" {...grabberProps} />
         <form
           className="search-form"
           onSubmit={(e) => {

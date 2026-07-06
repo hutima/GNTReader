@@ -4,6 +4,7 @@ import { useAppStore } from '@/state/store';
 import { useIsMobile } from './useViewport';
 import { describeMorph, displayGloss, morphChips, posHelp, posLabel } from './morph';
 import { HelpTerm } from './HelpTerm';
+import { useSheetDrag } from './useSheetDrag';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
@@ -18,6 +19,7 @@ export function DetailPanel() {
   const selectToken = useAppStore((s) => s.selectToken);
   const openStrongs = useAppStore((s) => s.openStrongs);
   const mobile = useIsMobile();
+  const { grabberProps, sheetStyle } = useSheetDrag(() => selectToken(null));
   const [entry, setEntry] = useState<StrongsEntry | null>(null);
 
   useEffect(() => {
@@ -133,9 +135,10 @@ export function DetailPanel() {
         className="detail sheet"
         role="dialog"
         aria-label="Word details"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="grabber" aria-hidden="true" />
+        <div className="grabber" {...grabberProps} />
         {body}
       </section>
     </div>
