@@ -53,11 +53,19 @@ top of the script.
 
 ## Deploying (GitHub Pages)
 
-The build is fully static and subpath-safe (`base: './'`). Publish `dist/`
-to Pages (e.g. an `actions/deploy-pages` workflow or a `gh-pages` branch).
-Before claiming a deploy works, run the offline smoke checklist above
-against the deployed URL, and remember FL-001: any change to cached data
-shapes/URLs must bump `CORPUS_CACHE` in `src/sw.ts` in the same commit.
+`.github/workflows/deploy.yml` builds the app and publishes `dist/` on every
+push to `main`. **One-time setup:** in the repo, go to Settings → Pages →
+Build and deployment → Source and select **GitHub Actions**. Pages' default
+"Deploy from a branch" mode serves the raw source tree — whose entry point
+is `./src/main.tsx`, which browsers cannot execute — and renders a blank
+page (FL-005); the workflow-based source is required.
+
+The build is fully static and subpath-safe (`base: './'`): assets are
+relative and the service worker registers as `./sw.js`, so it works from
+`https://<user>.github.io/<repo>/`. Before claiming a deploy works, run the
+offline smoke checklist above against the deployed URL, and remember FL-001:
+any change to cached data shapes/URLs must bump `CORPUS_CACHE` in
+`src/sw.ts` in the same commit.
 
 ## Data sources
 

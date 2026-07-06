@@ -68,3 +68,26 @@ reused; supersede rather than edit destructively. Every investigation over
   on the rendered range endpoints so a fresh observer reports initial
   intersections.
 - Links: src/ui/Reader.tsx, src/styles.css, scratchpad browser-smoke.
+
+## FL-005 — GitHub Pages serves a blank page (2026-07-06)
+
+- Status: fixed (regression guard: build workflow publishes dist/; blank
+  page returns only if Pages source is reverted to a branch).
+- Symptom: the site at https://hutima.github.io/GNTReader/ rendered blank.
+- Root cause: GitHub Pages was in the default "Deploy from a branch" mode
+  (workflow `dynamic/pages/pages-build-deployment`), which publishes the raw
+  repository files. The repo-root index.html's entry point is
+  `./src/main.tsx` (TypeScript/JSX the browser cannot execute) and `dist/`
+  is gitignored, so no built app was ever published — the browser loaded
+  index.html, failed to run main.tsx, and showed nothing. Pages was never
+  running `npm run build`.
+- Evidence: `actions_list` showed one workflow, `dynamic/pages/
+  pages-build-deployment` (branch mode); repo had no `.github/workflows/`;
+  committed `index.html:16` references `./src/main.tsx`; `.gitignore` lists
+  `dist/`.
+- Fix/decision: add `.github/workflows/deploy.yml` — checkout, `npm ci`,
+  `npm run build`, `upload-pages-artifact ./dist`, `deploy-pages`. Requires
+  a one-time repo setting: Settings → Pages → Source = "GitHub Actions".
+  Build output verified subpath-safe: relative assets, `register("./sw.js")`
+  resolves to `/GNTReader/sw.js`, manifest start_url/scope/icons relative.
+- Links: .github/workflows/deploy.yml, vite.config.ts (base './'), FL-002.
