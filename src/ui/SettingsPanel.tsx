@@ -41,6 +41,8 @@ export function SettingsPanel() {
   const setTheme = useAppStore((s) => s.setTheme);
   const readingScale = useAppStore((s) => s.readingScale);
   const setReadingScale = useAppStore((s) => s.setReadingScale);
+  const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
+  const setSyntaxHighlight = useAppStore((s) => s.setSyntaxHighlight);
   const { status, updateAvailable, checkForUpdate, clearCachesAndReload } = usePwa();
   const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
@@ -131,6 +133,30 @@ export function SettingsPanel() {
                   onClick={() => setReadingScale(readingScale + READING_SCALE_STEP)}
                 >
                   A+
+                </button>
+              </div>
+            </div>
+            <div className="settings-row">
+              <div className="label">
+                <span>Syntax highlight</span>
+                <small>Tint a tapped word&apos;s clause by grammatical role</small>
+              </div>
+              <div className="segmented" role="group" aria-label="Syntax highlight">
+                <button
+                  type="button"
+                  aria-pressed={!syntaxHighlight}
+                  className={!syntaxHighlight ? 'on' : ''}
+                  onClick={() => setSyntaxHighlight(false)}
+                >
+                  Off
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={syntaxHighlight}
+                  className={syntaxHighlight ? 'on' : ''}
+                  onClick={() => setSyntaxHighlight(true)}
+                >
+                  On
                 </button>
               </div>
             </div>

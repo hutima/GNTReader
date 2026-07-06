@@ -26,6 +26,7 @@ const POSITION_KEY = 'gr:lastRef';
 const MODE_KEY = 'gr:displayMode';
 const THEME_KEY = 'gr:theme';
 const SCALE_KEY = 'gr:readingScale';
+const SYNTAX_KEY = 'gr:syntax';
 
 /** Reading font-size multiplier bounds (settings; iOS-safe — CSS var, not zoom). */
 export const READING_SCALE_MIN = 0.8;
@@ -80,6 +81,15 @@ function loadScale(): number {
   return 1;
 }
 
+function loadSyntax(): boolean {
+  try {
+    // Default ON — the highlight is only shown for a tapped word.
+    return localStorage.getItem(SYNTAX_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
 function safeSet(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
@@ -118,6 +128,8 @@ interface AppState {
   theme: ThemeChoice;
   /** Reading font-size multiplier (applied via CSS var, not viewport zoom). */
   readingScale: number;
+  /** Highlight a tapped word's clause, coloured by grammatical role. */
+  syntaxHighlight: boolean;
   selectedToken: ReadingToken | null;
   panel: PanelView;
   /** Prefill for the Strong's panel (detail-panel click-through). */
@@ -130,6 +142,7 @@ interface AppState {
   setDisplayMode(mode: DisplayMode): void;
   setTheme(theme: ThemeChoice): void;
   setReadingScale(scale: number): void;
+  setSyntaxHighlight(on: boolean): void;
   selectToken(token: ReadingToken | null): void;
   openPanel(panel: PanelView): void;
   openStrongs(query: string): void;
@@ -148,6 +161,7 @@ export const useAppStore = create<AppState>((set) => ({
   displayMode: loadMode(),
   theme: loadTheme(),
   readingScale: loadScale(),
+  syntaxHighlight: loadSyntax(),
   selectedToken: null,
   panel: 'none',
   strongsQuery: '',
@@ -181,6 +195,10 @@ export const useAppStore = create<AppState>((set) => ({
     safeSet(SCALE_KEY, String(s));
     applyReadingScale(s);
     set({ readingScale: s });
+  },
+  setSyntaxHighlight(on) {
+    safeSet(SYNTAX_KEY, on ? 'on' : 'off');
+    set({ syntaxHighlight: on });
   },
   selectToken: (token) => set({ selectedToken: token }),
   openPanel: (panel) => set({ panel }),

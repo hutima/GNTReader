@@ -7,6 +7,8 @@ interface Props {
   token: ReadingToken;
   mode: DisplayMode;
   selected: boolean;
+  /** Syntax-role highlight class when this token is in the selected clause. */
+  synClass?: string;
   onSelect(token: ReadingToken): void;
 }
 
@@ -31,7 +33,7 @@ const MOVE_CANCEL_PX = 10;
  * panel. `after` renders OUTSIDE the tappable area so the highlight hugs the
  * word. Gloss mode replaces the surface; both mode stacks the gloss underneath.
  */
-export function TokenSpan({ token, mode, selected, onSelect }: Props) {
+export function TokenSpan({ token, mode, selected, synClass, onSelect }: Props) {
   const { mark, space } = afterParts(token.after);
   const surface = <span className={token.language}>{token.surface}</span>;
 
@@ -83,7 +85,7 @@ export function TokenSpan({ token, mode, selected, onSelect }: Props) {
     <>
       <button
         type="button"
-        className={`token${selected ? ' selected' : ''}`}
+        className={`token${selected ? ' selected' : ''}${synClass ? ` ${synClass}` : ''}`}
         onClick={onClick}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

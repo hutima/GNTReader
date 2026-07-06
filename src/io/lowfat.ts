@@ -8,8 +8,10 @@ import type {
 import type { BookInfo } from './books';
 
 /**
- * MACULA Lowfat XML → reading model. Reads ONLY the `<w>` leaves — the
- * `<wg>` word-group/syntax hierarchy is deliberately ignored (ADR-0001).
+ * MACULA Lowfat XML → reading model. Reads the `<w>` leaves plus a LIGHT slice
+ * of the `<wg>` tree: each word's grammatical role and its innermost clause
+ * (ADR-0001 amendment, 2026-07-06 — enough for role labels + clause
+ * highlighting, still no syntax graph/diagram).
  *
  * Shared mechanics: every `<w>` carries a canonical per-word reference
  * (`ref="JHN 1:1!4"` / `ref="GEN 1:1!2"`) and a fixed-width sortable
@@ -155,6 +157,75 @@ function hboMorphOf(w: Element): Morphology | undefined {
   return any ? (m as Morphology) : undefined;
 }
 
+// --- Syntax (light <wg> read) --------------------------------------------------
+
+interface TokenSyntax {
+  role?: string;
+  clauseId?: string;
+  clauseRule?: string;
+}
+
+function isWg(el: Element): boolean {
+  return el.tagName.toLowerCase() === 'wg';
+}
+
+function hasClass(el: Element, name: string): boolean {
+  return (el.getAttribute('class') ?? '').split(/\s+/).includes(name);
+}
+
+/** A usable role code, or undefined for absent / MACULA "err__…" diagnostics. */
+function cleanRole(raw: string | null): string | undefined {
+  const t = raw?.trim();
+  if (!t || t.startsWith('err')) return undefined;
+  return t;
+}
+
+function firstWordXmlId(el: Element): string | undefined {
+  for (const c of Array.from(el.getElementsByTagName('*'))) {
+    if (c.tagName.toLowerCase() === 'w') {
+      const id = xmlIdOf(c);
+      if (id) return id;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Walk a word's ancestors for its role (its own `role`, else the nearest
+ * role-bearing `<wg>`) and its innermost clause (`<wg class="cl">`). `clauseIds`
+ * caches a stable id per clause element so clause-mates share it.
+ */
+function syntaxOf(w: Element, clauseIds: Map<Element, string>): TokenSyntax | undefined {
+  let role = cleanRole(w.getAttribute('role'));
+  let clauseEl: Element | null = null;
+  for (let el = w.parentElement; el; el = el.parentElement) {
+    if (!isWg(el)) continue;
+    if (!role) role = cleanRole(el.getAttribute('role'));
+    if (hasClass(el, 'cl')) {
+      clauseEl = el;
+      break; // innermost clause; the role lives on a phrase within it
+    }
+  }
+
+  let clauseId: string | undefined;
+  let clauseRule: string | undefined;
+  if (clauseEl) {
+    clauseId = clauseIds.get(clauseEl);
+    if (!clauseId) {
+      clauseId = xmlIdOf(clauseEl) ?? firstWordXmlId(clauseEl);
+      if (clauseId) clauseIds.set(clauseEl, clauseId);
+    }
+    clauseRule = clauseEl.getAttribute('rule') ?? undefined;
+  }
+
+  if (!role && !clauseId && !clauseRule) return undefined;
+  return {
+    ...(role ? { role } : {}),
+    ...(clauseId ? { clauseId } : {}),
+    ...(clauseRule ? { clauseRule } : {}),
+  };
+}
+
 // --- Conversion ----------------------------------------------------------------
 
 interface LowfatReadOptions {
@@ -211,6 +282,7 @@ function readChapters(xml: string, reader: WordReader, opts: LowfatReadOptions):
 
   const chapters = new Map<number, Map<number, ReadingToken[]>>();
   const subCounter = new Map<string, number>();
+  const clauseIds = new Map<Element, string>();
 
   for (const [id, w] of words) {
     const ref = w.getAttribute('ref');
@@ -242,6 +314,7 @@ function readChapters(xml: string, reader: WordReader, opts: LowfatReadOptions):
       strong: reader.strongOf(w),
       pos: reader.posOf(w),
       morphology: reader.morphOf(w),
+      syntax: syntaxOf(w, clauseIds),
       sourceRef: ref ?? undefined,
       provenance: 'given',
     };

@@ -146,3 +146,23 @@ flow, adopted wholesale because it encodes a real production failure
 - The SBLGNT book XML is large (John ~12 MB); first open of a book on the
   network is slow. Mitigated by IndexedDB normalized-chapter cache and SW
   runtime cache; recorded as a known trap in `docs/restart.md`.
+
+## Amendment — 2026-07-06: light syntax read (partial reversal of "ignore `<wg>`")
+
+The MVP decision "adapters read only the `<w>` leaves; the `<wg>` hierarchy is
+ignored entirely" is **narrowed**, not reversed. The adapter now also reads a
+LIGHT slice of the `<wg>` tree per token: its grammatical **role** (own `role`,
+else the nearest role-bearing `<wg>`) and its innermost **clause** (id + rule).
+
+- What stays rejected: KrDocument, the full syntax graph, layout/diagram
+  engines, discontinuous-group rendering. This is metadata on the flat reading
+  token, not a tree.
+- Why: the Lowfat files already carry `role` (s/v/o/io/p/vc/adv/aux) on words
+  and groups plus clause constituency — enough to label a word's function and
+  highlight its clause-mates in the reader, at negligible cost (an ancestor
+  walk during the existing DOM parse).
+- Model impact: `ReadingToken.syntax = { role?, clauseId?, clauseRule? }`
+  (optional, open role codes). IndexedDB `DB_VERSION` bumped 1 → 2 so cached
+  chapters re-parse (raw XML is SW-cached, so offline-safe).
+- UX: default-on Settings toggle; tapping a word tints its clause by role and
+  the detail panel shows the role + clause structure.

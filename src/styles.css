@@ -568,6 +568,52 @@ button.hit:active {
   }
 }
 
+/* --- Syntax highlighting (clause coloured by grammatical role) ------------- */
+/* Tints applied to .token when its clause is selected. Semi-transparent so
+   they read on both themes; each role has a distinct hue. */
+.syn-s {
+  background: color-mix(in srgb, #3b82f6 24%, transparent);
+}
+.syn-v {
+  background: color-mix(in srgb, #e11d48 26%, transparent);
+}
+.syn-o {
+  background: color-mix(in srgb, #16a34a 26%, transparent);
+}
+.syn-io {
+  background: color-mix(in srgb, #0d9488 26%, transparent);
+}
+.syn-p {
+  background: color-mix(in srgb, #7c3aed 26%, transparent);
+}
+.syn-adv {
+  background: color-mix(in srgb, #d97706 28%, transparent);
+}
+.syn-aux {
+  background: color-mix(in srgb, #64748b 28%, transparent);
+}
+.syn-other {
+  background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+.token.selected {
+  /* Keep the selection ring dominant over any role tint. */
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+/* Detail-panel role chip: same hues, pill-shaped. */
+.syn-chip {
+  display: inline-block;
+  padding: 0.05rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+.clause-structure {
+  margin-left: 0.6rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 /* --- Glossable values (help affordance) ----------------------------------- */
 /* Morph code + part of speech in the detail panel: a dotted underline and a
    question-mark cursor signal an explanatory tooltip (title). */

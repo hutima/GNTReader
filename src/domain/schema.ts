@@ -119,6 +119,22 @@ export const ReadingTokenSchema = z.object({
   strong: z.string().optional(),
   pos: PartOfSpeechSchema.optional(),
   morphology: MorphologySchema.optional(),
+  /**
+   * Lightweight syntax, read from the MACULA `<wg>` tree (see lowfat.ts): the
+   * word's grammatical role plus an id + rule for its innermost clause. Enough
+   * to label a word's function and highlight its clause-mates — NOT a full
+   * syntax graph (ADR-0001 amendment, 2026-07-06). Role codes are raw and
+   * open (s, v, o, io, p, vc, adv, aux, pp…); consumers map/degrade.
+   */
+  syntax: z
+    .object({
+      role: z.string().optional(),
+      /** Shared by every token in the same innermost clause. */
+      clauseId: z.string().optional(),
+      /** The clause's constituent-order rule, e.g. "S-VC-P". */
+      clauseRule: z.string().optional(),
+    })
+    .optional(),
   /** The source's own reference string, e.g. "JHN 1:1!4" / "GEN 1:1!2". */
   sourceRef: z.string().optional(),
   /** Where the analysis came from. Adapters always emit 'given'. */
