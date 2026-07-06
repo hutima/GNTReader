@@ -5,11 +5,13 @@ import { useIsMobile } from './useViewport';
 import { describeMorph, displayGloss, morphChips, posHelp, posLabel } from './morph';
 import { HelpTerm } from './HelpTerm';
 import { useSheetDrag } from './useSheetDrag';
+import { humanizeClauseRule, roleClass, roleLabel } from './syntax';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
  * grabber (iOS HIG). Shows surface, lemma, transliteration, gloss, Strong's,
- * part of speech, parsing chips, and the reference. No syntax relations.
+ * part of speech, syntactic role + clause structure, parsing chips, and the
+ * reference (light syntax only — no full graph).
  *
  * Transliteration rule (ADR-0001): source-provided (Hebrew) → Strong's
  * entry's transliteration of the LEMMA (Greek) → "—". Never generated.
@@ -95,6 +97,21 @@ export function DetailPanel() {
             )}
           </dd>
         </div>
+        {token.syntax?.role && (
+          <div className="row">
+            <dt>Syntax</dt>
+            <dd>
+              <span className={`syn-chip ${roleClass(token.syntax.role)}`}>
+                {roleLabel(token.syntax.role)}
+              </span>
+              {token.syntax.clauseRule && (
+                <span className="clause-structure">
+                  {humanizeClauseRule(token.syntax.clauseRule)}
+                </span>
+              )}
+            </dd>
+          </div>
+        )}
         <div className="row">
           <dt>Parsing</dt>
           <dd>

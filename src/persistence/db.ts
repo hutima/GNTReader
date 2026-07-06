@@ -13,7 +13,10 @@ import { ReadingChapterSchema, type ReadingChapter } from '@/domain/schema';
  */
 
 export const DB_NAME = 'gnt-reader';
-export const DB_VERSION = 1;
+// v2: the token model gained `syntax` (role + clause); drop stale normalized
+// chapters on upgrade so they re-parse (the raw XML is still SW-cached, so this
+// is offline-safe). Bump for any keyPath/shape change (docs/config.md).
+export const DB_VERSION = 2;
 const CHAPTERS = 'chapters';
 
 function hasIndexedDb(): boolean {
@@ -25,9 +28,12 @@ let dbPromise: Promise<IDBPDatabase> | null = null;
 function db(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(d) {
+      upgrade(d, oldVersion, _newVersion, tx) {
         if (!d.objectStoreNames.contains(CHAPTERS)) {
           d.createObjectStore(CHAPTERS);
+        } else if (oldVersion < 2) {
+          // Token shape changed (added syntax) — clear so entries re-parse.
+          void tx.objectStore(CHAPTERS).clear();
         }
       },
     });

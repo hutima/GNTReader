@@ -21,6 +21,8 @@ export function Reader() {
   const { testament, bookNum, chapter, targetVerse, displayMode, selectedToken } = useAppStore();
   const selectToken = useAppStore((s) => s.selectToken);
   const clearTargetVerse = useAppStore((s) => s.clearTargetVerse);
+  const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
+  const selectedClauseId = selectedToken?.syntax?.clauseId ?? null;
 
   const [chapters, setChapters] = useState<ReadingChapter[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -213,6 +215,8 @@ export function Reader() {
                     verse={v}
                     mode={displayMode}
                     selectedId={selectedToken?.id ?? null}
+                    selectedClauseId={selectedClauseId}
+                    syntaxOn={syntaxHighlight}
                     onSelect={selectToken}
                   />
                 ))}

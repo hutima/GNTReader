@@ -7,6 +7,15 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ### Added
 
+- Syntax view (ADR-0001 amendment): the adapter now reads a light slice of the
+  MACULA `<wg>` tree — each token's grammatical role and its innermost clause.
+  Tapping a word tints its clause by role (subject/verb/object/complement/
+  adverbial), colour-matched to a new Syntax section in the detail panel that
+  shows the role + clause structure. Default-on Settings toggle. `DB_VERSION`
+  bumped to 2 (cached chapters re-parse).
+- Swipe-down-on-handle now dismisses every bottom sheet (Strong's, search,
+  word detail — previously only the book picker).
+
 - Phase 0: reconnaissance of reference repos, ADR-0001 day-one decisions,
   docs of record, R-learning skills library.
 - Phase 1: Vite + React + TS PWA shell — GitHub Pages-safe relative base,
