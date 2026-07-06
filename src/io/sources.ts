@@ -1,4 +1,5 @@
 import type { ReadingChapter, Testament } from '@/domain/schema';
+import { chapterCacheKey, getCachedChapter, putCachedChapters } from '@/persistence/db';
 import { bookInfo, otChapterFile, type BookInfo } from './books';
 import { greekXmlToChapters, hebrewXmlToChapters } from './lowfat';
 
@@ -94,6 +95,8 @@ function remember(chapters: ReadingChapter[]): void {
   for (const ch of chapters) {
     memory.set(chapterKey(ch.testament, ch.bookNum, ch.chapter), ch);
   }
+  // Persist normalized chapters so a book parses at most once per device.
+  void putCachedChapters(chapters);
 }
 
 /**
@@ -127,6 +130,15 @@ export async function loadChapter(
     throw new Error(`${book.name} has ${book.chapters} chapters (asked for ${chapter}).`);
   }
 
+  // IndexedDB: normalized chapters survive sessions (validated on read).
+  const cached = await getCachedChapter(
+    chapterCacheKey(sourceFor(testament).id, bookNum, chapter),
+  );
+  if (cached) {
+    memory.set(key, cached);
+    return cached;
+  }
+
   // Deduplicate concurrent loads of the same file (a GNT book load serves
   // many chapter requests at once).
   const loadKey = testament === 'gnt' ? `gnt/${bookNum}` : key;
@@ -151,6 +163,24 @@ export async function loadChapter(
     throw new Error(`${book.name} ${chapter} is not present in the source data.`);
   }
   return loaded;
+}
+
+/** How many chapters ahead/behind the visible range to warm (docs/config.md). */
+export const PREFETCH_CHAPTERS = 1;
+
+/** Warm the caches for chapters adjacent to `chapter` — fire and forget. */
+export function prefetchAdjacent(testament: Testament, bookNum: number, chapter: number): void {
+  const book = bookInfo(testament, bookNum);
+  if (!book) return;
+  for (let d = 1; d <= PREFETCH_CHAPTERS; d++) {
+    for (const c of [chapter - d, chapter + d]) {
+      if (c >= 1 && c <= book.chapters) {
+        void loadChapter(testament, bookNum, c).catch(() => {
+          /* prefetch is best-effort */
+        });
+      }
+    }
+  }
 }
 
 /** Synchronous cache peek (used by search over already-loaded scope). */

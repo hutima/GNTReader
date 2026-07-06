@@ -44,3 +44,27 @@ reused; supersede rather than edit destructively. Every investigation over
 - Fix/decision: compare `el.tagName.toLowerCase()`; read `xml:id` via both
   paths; fixture-conversion tests run under the same DOM the app ships with.
 - Links: `docs/restart.md` known traps.
+
+## FL-004 — Continuous scroll jumps ~a chapter's height when prepending (2026-07-06)
+
+- Status: fixed (regression guard: browser smoke step 5, drift < 6px)
+- Symptom: scrolling up to load the previous chapter threw the view far
+  downward (tracked verse drifted by exactly the prepended chapter's
+  height); in a second variant the previous chapter never loaded at all
+  after navigating to a chapter.
+- Root cause: two independent issues. (1) Chrome's native scroll anchoring
+  (`overflow-anchor: auto`, default) already compensates scrollTop when
+  content is inserted above the viewport, and the Reader's own layout-effect
+  compensation added the same delta again — double compensation. Safari/iOS
+  has no scroll anchoring, so the manual compensation must stay. (2) An
+  IntersectionObserver never re-reports a sentinel that REMAINS
+  intersecting, so after replacing the rendered range (navigation) the
+  already-visible top sentinel fired nothing.
+- Evidence: Playwright timeline — set scrollTop=200, prepend height 1444 →
+  scrollTop 3089 (= 200 + 2×1444) before the fix; 1644 (= 200 + 1444) after;
+  full smoke drift 0.3px.
+- Fix/decision: `.reader { overflow-anchor: none }` + keep manual
+  compensation (deterministic across engines); recreate the observer keyed
+  on the rendered range endpoints so a fresh observer reports initial
+  intersections.
+- Links: src/ui/Reader.tsx, src/styles.css, scratchpad browser-smoke.

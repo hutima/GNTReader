@@ -167,6 +167,10 @@ button {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* The Reader compensates scrollTop itself when prepending chapters
+     (Safari/iOS has no native scroll anchoring). Disable the native
+     anchoring so Chrome doesn't compensate a second time. */
+  overflow-anchor: none;
   padding: 1rem;
   padding-left: max(1rem, env(safe-area-inset-left));
   padding-right: max(1rem, env(safe-area-inset-right));
@@ -227,6 +231,9 @@ button {
 }
 .after {
   user-select: none;
+}
+.sentinel {
+  height: 1px;
 }
 .notice {
   color: var(--muted);
