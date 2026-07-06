@@ -7,6 +7,14 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ### Fixed
 
+- Word-detail sheet (mobile) is capped at ~45% of the screen and scrolls
+  internally, with a non-dimming, click-through backdrop so the reader (and its
+  clause highlight) stays visible and scrollable underneath — a scroll no longer
+  closes it. The grabber is pinned to the top of every sheet (sticky) so it
+  never scrolls out of reach, and sheet scrolling no longer chains into the
+  reader behind a blocking panel (`overscroll-behavior: contain`). Verified with
+  real-browser drags and scrolls.
+
 - Bottom-sheet swipe-to-dismiss actually works now (Settings and the others):
   `useSheetDrag` binds its move/up listeners synchronously on the captured
   grabber instead of via an effect that raced the drag, and the grabber is now
