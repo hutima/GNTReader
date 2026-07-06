@@ -3,6 +3,7 @@ import { loadStrongs, strongsEntry, type StrongsEntry } from '@/io/strongs';
 import { useAppStore } from '@/state/store';
 import { useIsMobile } from './useViewport';
 import { describeMorph, displayGloss, morphChips, posHelp, posLabel } from './morph';
+import { HelpTerm } from './HelpTerm';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
@@ -86,9 +87,7 @@ export function DetailPanel() {
           <dt>Part of speech</dt>
           <dd>
             {token.pos ? (
-              <span className="glossable" title={posHelp(token.pos)}>
-                {posLabel(token.pos)}
-              </span>
+              <HelpTerm label={posLabel(token.pos)} help={posHelp(token.pos)} />
             ) : (
               posLabel(token.pos)
             )}
@@ -114,9 +113,7 @@ export function DetailPanel() {
           <div className="row">
             <dt>Morph code</dt>
             <dd>
-              <code className="glossable" title={describeMorph(token) || undefined}>
-                {token.morphology.extra.morph}
-              </code>
+              <HelpTerm label={token.morphology.extra.morph} help={describeMorph(token)} mono />
             </dd>
           </div>
         )}
