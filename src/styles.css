@@ -1,0 +1,519 @@
+:root {
+  --bg: #f5f7fa;
+  --fg: #1f2933;
+  --muted: #52606d;
+  --line: #d9e2ec;
+  --accent: #2b6cb0;
+  --accent-soft: #ebf4ff;
+  --panel: #ffffff;
+  --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  /* iOS HIG: minimum comfortable touch target. */
+  --touch: 44px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15191e;
+    --fg: #e4e7eb;
+    --muted: #9aa5b1;
+    --line: #323f4b;
+    --accent: #63b3ed;
+    --accent-soft: #1a2c3d;
+    --panel: #1f2933;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  /* iOS HIG: the system type stack (SF on Apple platforms). */
+  font:
+    17px/1.65 -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    'Segoe UI',
+    sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Original-language font stacks: legible diacritics / vowel points. */
+.grc {
+  font-family: 'SBL Greek', 'Gentium Plus', Gentium, 'Palatino Linotype', Palatino, Georgia,
+    serif;
+}
+.hbo {
+  font-family: 'SBL Hebrew', 'Ezra SIL', 'Taamey Frank CLM', 'Arial Hebrew', 'Times New Roman',
+    serif;
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+/* --- Shell -------------------------------------------------------------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--touch);
+  padding: 0.25rem 0.75rem;
+  padding-top: max(0.25rem, env(safe-area-inset-top));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+  border-bottom: 1px solid var(--line);
+  /* iOS HIG: translucent bar over content. */
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  z-index: 4;
+}
+.title-button {
+  font-weight: 600;
+  min-height: var(--touch);
+  padding: 0 0.5rem;
+  border-radius: 10px;
+}
+.title-button:active {
+  background: var(--accent-soft);
+}
+.chev {
+  color: var(--muted);
+  font-size: 0.8em;
+}
+.header-spacer {
+  flex: 1;
+}
+.icon-button {
+  min-width: var(--touch);
+  min-height: var(--touch);
+  border-radius: 10px;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-button:active {
+  background: var(--accent-soft);
+}
+.badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+.badge-action {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* iOS-style segmented control. */
+.segmented {
+  display: inline-flex;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  border-radius: 9px;
+  padding: 2px;
+}
+.segmented button {
+  min-height: calc(var(--touch) - 14px);
+  padding: 0.1rem 0.7rem;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.segmented button.on {
+  background: var(--panel);
+  color: var(--fg);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.segmented:not(.compact) button {
+  min-height: calc(var(--touch) - 8px);
+  flex: 1;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* --- Reader ------------------------------------------------------------- */
+
+.reader {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* The Reader compensates scrollTop itself when prepending chapters
+     (Safari/iOS has no native scroll anchoring). Disable the native
+     anchoring so Chrome doesn't compensate a second time. */
+  overflow-anchor: none;
+  padding: 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.chapter {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+.chapter-heading {
+  font-size: 1.3rem;
+  margin: 0.5rem 0 1rem;
+}
+.verses {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 2.1;
+}
+.hbo-chapter .verses {
+  direction: rtl;
+  font-size: 1.45rem;
+}
+.verse-num {
+  color: var(--accent);
+  font-size: 0.7em;
+  font-weight: 600;
+  margin: 0 0.25em;
+  user-select: none;
+}
+.token {
+  border-radius: 6px;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
+  line-height: inherit;
+}
+.token:active {
+  background: var(--accent-soft);
+}
+.token.selected {
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+.token-gloss {
+  font-size: 0.82em;
+  color: var(--fg);
+}
+.token-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: text-bottom;
+}
+.token-stack .under {
+  font-size: 0.6em;
+  color: var(--muted);
+  line-height: 1.2;
+  direction: ltr;
+}
+.after {
+  user-select: none;
+}
+.sentinel {
+  height: 1px;
+}
+.notice {
+  color: var(--muted);
+  text-align: center;
+  padding: 2rem 1rem;
+}
+.notice.error {
+  color: #c53030;
+}
+
+/* --- Detail panel (desktop side / mobile sheet) --------------------------- */
+
+.detail {
+  background: var(--panel);
+}
+.detail.side {
+  width: 320px;
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 1rem;
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.detail.sheet,
+.panel-sheet {
+  background: var(--panel);
+  border-radius: 14px 14px 0 0;
+  box-shadow: var(--sheet-shadow);
+  padding: 0.4rem 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  max-height: 78vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.grabber {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--fg) 25%, transparent);
+  margin: 0.35rem auto 0.75rem;
+}
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.detail-surface {
+  font-size: 1.6rem;
+}
+.close {
+  min-width: var(--touch);
+  min-height: var(--touch);
+  border-radius: 50%;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.close:active {
+  background: var(--accent-soft);
+}
+.detail-rows {
+  margin: 0;
+}
+.detail-rows .row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line);
+  align-items: baseline;
+}
+.detail-rows dt {
+  flex: 0 0 8.5em;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.detail-rows dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.chip {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 0.05rem 0.55rem;
+  white-space: nowrap;
+}
+.link {
+  color: var(--accent);
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --- Book picker ---------------------------------------------------------- */
+
+.panel-sheet {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 44rem;
+}
+.picker-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+.grid {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.75rem 0;
+}
+.grid.books {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+}
+.grid.chapters {
+  grid-template-columns: repeat(auto-fill, minmax(3.2rem, 1fr));
+}
+.cell {
+  min-height: var(--touch);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.25rem 0.5rem;
+  text-align: center;
+  background: var(--panel);
+}
+.cell:active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* --- Search / Strong's panels ---------------------------------------------- */
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.field.grow,
+.grow {
+  flex: 1;
+}
+.field input,
+.field select {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: calc(var(--touch) - 6px);
+  padding: 0 0.6rem;
+}
+.field input.narrow {
+  width: 7em;
+}
+.button {
+  min-height: var(--touch);
+  padding: 0 1.1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-weight: 600;
+}
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.button:active {
+  opacity: 0.8;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+.progress progress {
+  flex: 1;
+}
+.results-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0.25rem;
+}
+.hit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hit {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.15rem 0.75rem;
+  align-items: baseline;
+  width: 100%;
+  text-align: start;
+  padding: 0.6rem 0.25rem;
+  border-top: 1px solid var(--line);
+  min-height: var(--touch);
+}
+button.hit:active {
+  background: var(--accent-soft);
+}
+.hit-ref {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hit-surface {
+  font-size: 1.15rem;
+}
+.hit-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hit .chips {
+  grid-column: 1 / -1;
+}
+.hit-context {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.strongs-hit {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+}
+
+@media (min-width: 768px) {
+  .sheet-backdrop {
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+  }
+  .panel-sheet {
+    border-radius: 14px;
+    max-height: 80vh;
+  }
+  .panel-sheet .grabber {
+    display: none;
+  }
+}
