@@ -60,6 +60,7 @@ export default defineConfig({
     }),
   ],
   test: {
+    globals: true, // enables Testing Library auto-cleanup between tests
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],

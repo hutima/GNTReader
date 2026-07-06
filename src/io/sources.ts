@@ -130,22 +130,21 @@ export async function loadChapter(
   // Deduplicate concurrent loads of the same file (a GNT book load serves
   // many chapter requests at once).
   const loadKey = testament === 'gnt' ? `gnt/${bookNum}` : key;
-  let pending = inflight.get(loadKey);
-  if (!pending) {
-    pending =
-      testament === 'gnt' ? loadGntBook(book) : loadOtChapterFile(book, chapter);
-    inflight.set(loadKey, pending);
-    pending.finally(() => inflight.delete(loadKey));
-  }
-  await pending;
+  const track = (p: Promise<void>): Promise<void> => {
+    inflight.set(loadKey, p);
+    // Cleanup must not spawn a floating rejected promise — swallow first.
+    void p.catch(() => {}).finally(() => {
+      if (inflight.get(loadKey) === p) inflight.delete(loadKey);
+    });
+    return p;
+  };
+  await (inflight.get(loadKey) ??
+    track(testament === 'gnt' ? loadGntBook(book) : loadOtChapterFile(book, chapter)));
 
   let loaded = memory.get(key);
   if (!loaded && testament === 'gnt') {
     // Book was served by the partial fixture; fetch the real book file.
-    const full = loadGntBook(book, { skipFixture: true });
-    inflight.set(loadKey, full);
-    full.finally(() => inflight.delete(loadKey));
-    await full;
+    await track(loadGntBook(book, { skipFixture: true }));
     loaded = memory.get(key);
   }
   if (!loaded) {
