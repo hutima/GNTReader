@@ -1,5 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#1f2933"/>
-  <text x="32" y="44" font-family="Georgia, serif" font-size="34" fill="#f5f7fa" text-anchor="middle">α</text>
-  <text x="47" y="30" font-family="Georgia, serif" font-size="20" fill="#9fb3c8" text-anchor="middle">א</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GNT Reader">
+  <!-- App mark: an open book showing Α … Ω ("the first and the last") on a
+       phone — a reading app for scripture. Brand crimson (#b90e31) accents on a
+       navy device frame. The letters use Gentium Book Plus (the app's scripture
+       face); scripts/generate-icons.mjs embeds that font when rasterising the
+       PNG icons, and browsers fall back to a serif in the tab. -->
+  <rect x="150" y="96" width="212" height="320" rx="44" fill="none" stroke="#17233e" stroke-width="20"/>
+  <rect x="233" y="123" width="46" height="10" rx="5" fill="#17233e"/>
+  <path d="M256,205 C200,180 150,170 110,174 C112,240 120,300 132,352 C170,362 220,368 256,378 Z"
+        fill="#f8f3ea" stroke="#b90e31" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M256,205 C312,180 362,170 402,174 C400,240 392,300 380,352 C342,362 292,368 256,378 Z"
+        fill="#f8f3ea" stroke="#b90e31" stroke-width="9" stroke-linejoin="round"/>
+  <line x1="256" y1="205" x2="256" y2="378" stroke="#b90e31" stroke-width="7"/>
+  <g fill="#b90e31" font-family="'Gentium Book Plus', Georgia, 'Times New Roman', serif" text-anchor="middle">
+    <text x="182" y="330" font-size="120">Α</text>
+    <text x="330" y="330" font-size="120">Ω</text>
+  </g>
+  <circle cx="256" cy="379" r="10" fill="#17233e"/>
 </svg>

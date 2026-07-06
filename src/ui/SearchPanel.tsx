@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { bookInfo } from '@/io/books';
 import {
   searchScope,
+  searchTestament,
   type SearchHit,
   type SearchProgress,
   type SearchQuery,
@@ -77,7 +78,7 @@ export function SearchPanel() {
   const selectToken = useAppStore((s) => s.selectToken);
 
   const [q, setQ] = useState<SearchQuery>({ field: 'any' });
-  const [scope, setScope] = useState<'chapter' | 'book'>('chapter');
+  const [scope, setScope] = useState<'chapter' | 'book' | 'testament'>('chapter');
   const [result, setResult] = useState<SearchResult | null>(null);
   const [progress, setProgress] = useState<SearchProgress | null>(null);
   const [running, setRunning] = useState(false);
@@ -104,16 +105,22 @@ export function SearchPanel() {
     setResult(null);
     setProgress(null);
     try {
-      const r = await searchScope(
-        {
-          testament,
-          bookNum,
-          startChapter: scope === 'chapter' ? chapter : 1,
-          endChapter: scope === 'chapter' ? chapter : book.chapters,
-        },
-        q,
-        { signal: abortRef.current.signal, onProgress: setProgress },
-      );
+      const r =
+        scope === 'testament'
+          ? await searchTestament(testament, q, {
+              signal: abortRef.current.signal,
+              onProgress: (p) => setProgress({ chaptersDone: p.chaptersDone, chaptersTotal: p.chaptersTotal }),
+            })
+          : await searchScope(
+              {
+                testament,
+                bookNum,
+                startChapter: scope === 'chapter' ? chapter : 1,
+                endChapter: scope === 'chapter' ? chapter : book.chapters,
+              },
+              q,
+              { signal: abortRef.current.signal, onProgress: setProgress },
+            );
       setResult(r);
     } finally {
       setRunning(false);
@@ -209,6 +216,15 @@ export function SearchPanel() {
                 onClick={() => setScope('book')}
               >
                 All of {book?.name}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={scope === 'testament'}
+                className={scope === 'testament' ? 'on' : ''}
+                onClick={() => setScope('testament')}
+              >
+                All {testament === 'gnt' ? 'NT' : 'OT'}
               </button>
             </div>
             <div className="grow" />

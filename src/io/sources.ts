@@ -165,8 +165,9 @@ export async function loadChapter(
   return loaded;
 }
 
-/** How many chapters ahead/behind the visible range to warm (docs/config.md). */
-export const PREFETCH_CHAPTERS = 1;
+/** How many chapters ahead/behind the visible range to warm (docs/config.md).
+ *  Matches the reader's window radius so the ±2 chapters are cached ahead. */
+export const PREFETCH_CHAPTERS = 2;
 
 /** Warm the caches for chapters adjacent to `chapter` — fire and forget. */
 export function prefetchAdjacent(testament: Testament, bookNum: number, chapter: number): void {

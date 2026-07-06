@@ -1,5 +1,6 @@
 import { foldAccents, foldGreekSearch, tidyGloss } from '@/domain/normalize';
 import type { ReadingToken, ReadingVerse, Testament } from '@/domain/schema';
+import { booksOf } from '@/io/books';
 import { loadChapter } from '@/io/sources';
 import { normalizeStrong } from '@/io/strongs';
 
@@ -162,6 +163,63 @@ export async function searchScope(
     }
     done++;
     opts.onProgress?.({ chaptersDone: done, chaptersTotal: total });
+  }
+  return { hits, capped, failedChapters };
+}
+
+export interface TestamentProgress {
+  chaptersDone: number;
+  chaptersTotal: number;
+  currentBook: string;
+}
+
+/**
+ * Stream every chapter of every book in a testament, in canonical order.
+ * Same cancellable, failure-tolerant streaming shape as `searchScope`, just
+ * widened to a whole testament; progress also reports which book is in
+ * flight since a testament sweep can take a while.
+ */
+export async function searchTestament(
+  testament: Testament,
+  query: SearchQuery,
+  opts?: {
+    signal?: AbortSignal;
+    onProgress?: (p: TestamentProgress) => void;
+    cap?: number;
+  },
+): Promise<SearchResult> {
+  const hits: SearchHit[] = [];
+  const failedChapters: number[] = [];
+  let capped = false;
+
+  if (isEmptyQuery(query)) return { hits, capped, failedChapters };
+
+  const cap = opts?.cap ?? SEARCH_RESULT_CAP;
+  const books = booksOf(testament);
+  const chaptersTotal = books.reduce((sum, b) => sum + b.chapters, 0);
+  let done = 0;
+
+  outer: for (const book of books) {
+    for (let c = 1; c <= book.chapters; c++) {
+      if (opts?.signal?.aborted) break outer;
+      try {
+        const chapter = await loadChapter(testament, book.num, c);
+        for (const verse of chapter.verses) {
+          for (const token of verse.tokens) {
+            if (!matchToken(token, query)) continue;
+            if (hits.length >= cap) {
+              capped = true;
+              break outer;
+            }
+            hits.push({ token, ref: verse.ref, context: contextLine(verse, token) });
+          }
+        }
+      } catch {
+        failedChapters.push(c);
+      }
+      done++;
+      opts?.onProgress?.({ chaptersDone: done, chaptersTotal, currentBook: book.name });
+    }
   }
   return { hits, capped, failedChapters };
 }
