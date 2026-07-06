@@ -6,6 +6,7 @@ import { describeMorph, displayGloss, morphChips, posHelp, posLabel } from './mo
 import { HelpTerm } from './HelpTerm';
 import { useSheetDrag } from './useSheetDrag';
 import { humanizeClauseRule, roleClass, roleLabel } from './syntax';
+import { lexemeKey, parseKey } from './vocab';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
@@ -20,6 +21,11 @@ export function DetailPanel() {
   const token = useAppStore((s) => s.selectedToken);
   const selectToken = useAppStore((s) => s.selectToken);
   const openStrongs = useAppStore((s) => s.openStrongs);
+  const vocabMode = useAppStore((s) => s.vocabMode);
+  const knownLexemes = useAppStore((s) => s.knownLexemes);
+  const knownParses = useAppStore((s) => s.knownParses);
+  const markKnown = useAppStore((s) => s.markKnown);
+  const unmarkKnown = useAppStore((s) => s.unmarkKnown);
   const mobile = useIsMobile();
   const { grabberProps, sheetStyle } = useSheetDrag(() => selectToken(null));
   const [entry, setEntry] = useState<StrongsEntry | null>(null);
@@ -49,6 +55,11 @@ export function DetailPanel() {
     : null;
   const chips = morphChips(token);
 
+  const lexKey = lexemeKey(token);
+  const pKey = parseKey(token);
+  const lexKnown = lexKey != null && knownLexemes.has(lexKey);
+  const parseKnown = knownParses.has(pKey);
+
   const body = (
     <>
       <header className="detail-head">
@@ -75,6 +86,36 @@ export function DetailPanel() {
           <dt>Gloss</dt>
           <dd>{displayGloss(token)}</dd>
         </div>
+        {vocabMode && (
+          <div className="row">
+            <dt>Vocabulary</dt>
+            <dd>
+              <div className="vocab-actions">
+                <button
+                  type="button"
+                  className={`mini${lexKnown ? ' marked' : ''}`}
+                  disabled={!lexKey}
+                  onClick={() =>
+                    lexKey && (lexKnown ? unmarkKnown('lexeme', lexKey) : markKnown('lexeme', lexKey))
+                  }
+                >
+                  {lexKnown ? '✓ Word known' : 'Mark word known'}
+                </button>
+                <button
+                  type="button"
+                  className={`mini${parseKnown ? ' marked' : ''}`}
+                  disabled={lexKnown}
+                  title={lexKnown ? 'Already known via the whole word' : undefined}
+                  onClick={() =>
+                    parseKnown ? unmarkKnown('parse', pKey) : markKnown('parse', pKey)
+                  }
+                >
+                  {parseKnown ? '✓ This form known' : 'Mark this form known'}
+                </button>
+              </div>
+            </dd>
+          </div>
+        )}
         <div className="row">
           <dt>Strong’s</dt>
           <dd>

@@ -614,6 +614,18 @@ button.hit:active {
   font-size: 0.85rem;
 }
 
+/* --- Vocabulary (known words) --------------------------------------------- */
+.vocab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.mini.marked {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* --- Glossable values (help affordance) ----------------------------------- */
 /* Morph code + part of speech in the detail panel: a dotted underline and a
    question-mark cursor signal an explanatory tooltip (title). */

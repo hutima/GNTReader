@@ -9,6 +9,8 @@ interface Props {
   selected: boolean;
   /** Syntax-role highlight class when this token is in the selected clause. */
   synClass?: string;
+  /** Vocabulary mode: the reader has marked this word known — hide its gloss. */
+  known?: boolean;
   onSelect(token: ReadingToken): void;
 }
 
@@ -33,7 +35,7 @@ const MOVE_CANCEL_PX = 10;
  * panel. `after` renders OUTSIDE the tappable area so the highlight hugs the
  * word. Gloss mode replaces the surface; both mode stacks the gloss underneath.
  */
-export function TokenSpan({ token, mode, selected, synClass, onSelect }: Props) {
+export function TokenSpan({ token, mode, selected, synClass, known, onSelect }: Props) {
   const { mark, space } = afterParts(token.after);
   const surface = <span className={token.language}>{token.surface}</span>;
 
@@ -96,12 +98,16 @@ export function TokenSpan({ token, mode, selected, synClass, onSelect }: Props) 
       >
         {mode === 'original' && surface}
         {mode === 'gloss' && <span className="token-gloss">{displayGloss(token)}</span>}
-        {mode === 'both' && (
-          <span className="token-stack">
-            {surface}
-            <span className="token-gloss under">{displayGloss(token)}</span>
-          </span>
-        )}
+        {/* Both mode: known words drop their gloss (progressive glossing). */}
+        {mode === 'both' &&
+          (known ? (
+            surface
+          ) : (
+            <span className="token-stack">
+              {surface}
+              <span className="token-gloss under">{displayGloss(token)}</span>
+            </span>
+          ))}
         {showGloss && (
           <span className="gloss-bubble" role="tooltip">
             {displayGloss(token)}

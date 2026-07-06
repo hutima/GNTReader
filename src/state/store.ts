@@ -27,6 +27,11 @@ const MODE_KEY = 'gr:displayMode';
 const THEME_KEY = 'gr:theme';
 const SCALE_KEY = 'gr:readingScale';
 const SYNTAX_KEY = 'gr:syntax';
+const VOCAB_KEY = 'gr:vocab';
+const KNOWN_LEX_KEY = 'gr:knownLexemes';
+const KNOWN_PARSE_KEY = 'gr:knownParses';
+
+export type KnownScope = 'lexeme' | 'parse';
 
 /** Reading font-size multiplier bounds (settings; iOS-safe — CSS var, not zoom). */
 export const READING_SCALE_MIN = 0.8;
@@ -90,6 +95,27 @@ function loadSyntax(): boolean {
   }
 }
 
+function loadVocab(): boolean {
+  try {
+    return localStorage.getItem(VOCAB_KEY) === 'on'; // default off
+  } catch {
+    return false;
+  }
+}
+
+function loadKnownSet(key: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const arr: unknown = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr.filter((x): x is string => typeof x === 'string'));
+    }
+  } catch {
+    /* fall through to empty */
+  }
+  return new Set();
+}
+
 function safeSet(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
@@ -130,6 +156,11 @@ interface AppState {
   readingScale: number;
   /** Highlight a tapped word's clause, coloured by grammatical role. */
   syntaxHighlight: boolean;
+  /** Vocabulary mode: hide the gloss under known words in Both mode. */
+  vocabMode: boolean;
+  /** Known dictionary headwords (lexeme keys) and known exact forms (parse keys). */
+  knownLexemes: Set<string>;
+  knownParses: Set<string>;
   selectedToken: ReadingToken | null;
   panel: PanelView;
   /** Prefill for the Strong's panel (detail-panel click-through). */
@@ -143,6 +174,10 @@ interface AppState {
   setTheme(theme: ThemeChoice): void;
   setReadingScale(scale: number): void;
   setSyntaxHighlight(on: boolean): void;
+  setVocabMode(on: boolean): void;
+  markKnown(scope: KnownScope, key: string): void;
+  unmarkKnown(scope: KnownScope, key: string): void;
+  resetKnown(): void;
   selectToken(token: ReadingToken | null): void;
   openPanel(panel: PanelView): void;
   openStrongs(query: string): void;
@@ -162,6 +197,9 @@ export const useAppStore = create<AppState>((set) => ({
   theme: loadTheme(),
   readingScale: loadScale(),
   syntaxHighlight: loadSyntax(),
+  vocabMode: loadVocab(),
+  knownLexemes: loadKnownSet(KNOWN_LEX_KEY),
+  knownParses: loadKnownSet(KNOWN_PARSE_KEY),
   selectedToken: null,
   panel: 'none',
   strongsQuery: '',
@@ -199,6 +237,35 @@ export const useAppStore = create<AppState>((set) => ({
   setSyntaxHighlight(on) {
     safeSet(SYNTAX_KEY, on ? 'on' : 'off');
     set({ syntaxHighlight: on });
+  },
+  setVocabMode(on) {
+    safeSet(VOCAB_KEY, on ? 'on' : 'off');
+    set({ vocabMode: on });
+  },
+  markKnown(scope, key) {
+    if (!key) return;
+    set((s) => {
+      const cur = scope === 'lexeme' ? s.knownLexemes : s.knownParses;
+      if (cur.has(key)) return {};
+      const next = new Set(cur).add(key);
+      safeSet(scope === 'lexeme' ? KNOWN_LEX_KEY : KNOWN_PARSE_KEY, JSON.stringify([...next]));
+      return scope === 'lexeme' ? { knownLexemes: next } : { knownParses: next };
+    });
+  },
+  unmarkKnown(scope, key) {
+    set((s) => {
+      const cur = scope === 'lexeme' ? s.knownLexemes : s.knownParses;
+      if (!cur.has(key)) return {};
+      const next = new Set(cur);
+      next.delete(key);
+      safeSet(scope === 'lexeme' ? KNOWN_LEX_KEY : KNOWN_PARSE_KEY, JSON.stringify([...next]));
+      return scope === 'lexeme' ? { knownLexemes: next } : { knownParses: next };
+    });
+  },
+  resetKnown() {
+    safeSet(KNOWN_LEX_KEY, '[]');
+    safeSet(KNOWN_PARSE_KEY, '[]');
+    set({ knownLexemes: new Set(), knownParses: new Set() });
   },
   selectToken: (token) => set({ selectedToken: token }),
   openPanel: (panel) => set({ panel }),

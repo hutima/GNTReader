@@ -7,6 +7,11 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ### Added
 
+- Vocabulary mode (Settings toggle, default off): in Both mode, mark a word
+  known from its detail panel — either the whole lexeme or just this parse —
+  and its gloss drops away, so only the words still being learned keep a gloss.
+  Known words persist (localStorage) with a Reset button in Settings.
+
 - Syntax view (ADR-0001 amendment): the adapter now reads a light slice of the
   MACULA `<wg>` tree — each token's grammatical role and its innermost clause.
   Tapping a word tints its clause by role (subject/verb/object/complement/
