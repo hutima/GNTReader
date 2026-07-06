@@ -374,6 +374,128 @@ button {
   border-color: var(--accent);
 }
 
+/* --- Search / Strong's panels ---------------------------------------------- */
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.field.grow,
+.grow {
+  flex: 1;
+}
+.field input,
+.field select {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: calc(var(--touch) - 6px);
+  padding: 0 0.6rem;
+}
+.field input.narrow {
+  width: 7em;
+}
+.button {
+  min-height: var(--touch);
+  padding: 0 1.1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-weight: 600;
+}
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.button:active {
+  opacity: 0.8;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+.progress progress {
+  flex: 1;
+}
+.results-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0.25rem;
+}
+.hit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hit {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.15rem 0.75rem;
+  align-items: baseline;
+  width: 100%;
+  text-align: start;
+  padding: 0.6rem 0.25rem;
+  border-top: 1px solid var(--line);
+  min-height: var(--touch);
+}
+button.hit:active {
+  background: var(--accent-soft);
+}
+.hit-ref {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hit-surface {
+  font-size: 1.15rem;
+}
+.hit-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hit .chips {
+  grid-column: 1 / -1;
+}
+.hit-context {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.strongs-hit {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+}
+
 @media (min-width: 768px) {
   .sheet-backdrop {
     justify-content: center;

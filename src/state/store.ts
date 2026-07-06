@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { z } from 'zod';
 import type { ReadingToken, Testament } from '@/domain/schema';
+import type { SearchQuery } from '@/search/morphology';
 
 /**
  * App state. Small and flat; chapter data itself lives in the loader caches
@@ -62,6 +63,8 @@ interface AppState {
   panel: PanelView;
   /** Prefill for the Strong's panel (detail-panel click-through). */
   strongsQuery: string;
+  /** One-shot prefill for the search panel ("find occurrences"). */
+  searchPrefill: SearchQuery | null;
 
   navigate(testament: Testament, bookNum: number, chapter: number, verse?: number): void;
   clearTargetVerse(): void;
@@ -69,6 +72,8 @@ interface AppState {
   selectToken(token: ReadingToken | null): void;
   openPanel(panel: PanelView): void;
   openStrongs(query: string): void;
+  openSearch(prefill?: SearchQuery): void;
+  consumeSearchPrefill(): void;
 }
 
 const initial = loadPosition();
@@ -82,6 +87,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedToken: null,
   panel: 'none',
   strongsQuery: '',
+  searchPrefill: null,
 
   navigate(testament, bookNum, chapter, verse) {
     safeSet(POSITION_KEY, JSON.stringify({ testament, bookNum, chapter }));
@@ -104,4 +110,6 @@ export const useAppStore = create<AppState>((set) => ({
   selectToken: (token) => set({ selectedToken: token }),
   openPanel: (panel) => set({ panel }),
   openStrongs: (query) => set({ panel: 'strongs', strongsQuery: query }),
+  openSearch: (prefill) => set({ panel: 'search', searchPrefill: prefill ?? null }),
+  consumeSearchPrefill: () => set({ searchPrefill: null }),
 }));
