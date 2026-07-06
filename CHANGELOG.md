@@ -5,6 +5,17 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ## [Unreleased]
 
+### Fixed
+
+- Bottom-sheet swipe-to-dismiss actually works now (Settings and the others):
+  `useSheetDrag` binds its move/up listeners synchronously on the captured
+  grabber instead of via an effect that raced the drag, and the grabber is now
+  a tall full-width hit target (small visual pill) so it is easy to grab. A tiny
+  twitch no longer counts as a dismiss flick. Verified with a real-browser drag;
+  regression unit test added (`tests/sheet-drag.test.tsx`). Added a CLAUDE.md
+  rule: interactive gestures must be verified in a real browser, not just unit
+  tests.
+
 ### Added
 
 - Vocabulary refinements: long-press a word (Gloss/Both mode) to toggle it

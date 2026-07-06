@@ -337,12 +337,21 @@ button {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* The grabber is a tall, full-width drag target (easy to grab) with the small
+   visual pill drawn as a centred pseudo-element. */
 .grabber {
-  width: 36px;
+  height: 26px;
+  margin: 0.1rem 0 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.grabber::before {
+  content: '';
+  width: 40px;
   height: 5px;
   border-radius: 3px;
   background: color-mix(in srgb, var(--fg) 25%, transparent);
-  margin: 0.35rem auto 0.75rem;
 }
 .detail-head {
   display: flex;
