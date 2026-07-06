@@ -331,17 +331,43 @@ button {
   background: var(--panel);
   border-radius: 14px 14px 0 0;
   box-shadow: var(--sheet-shadow);
-  padding: 0.4rem 1rem;
+  /* No top padding: the sticky grabber provides the top spacing and must sit
+     flush so nothing shows in a sliver above it while scrolling. */
+  padding: 0 1rem;
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
   max-height: 78vh;
   overflow-y: auto;
+  /* Never chain a sheet's scroll into the reader behind it. */
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+/* The mobile word-detail sheet is capped at ~45% of the screen and scrolls
+   internally. Its backdrop does NOT dim and lets pointer events pass through
+   above the sheet, so the reader (and its clause highlight) stays visible and
+   scrollable while the detail is open. */
+.detail.sheet {
+  max-height: 45vh;
+  max-height: 45svh;
+}
+.detail-backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+.detail-backdrop .detail.sheet {
+  pointer-events: auto;
+}
 /* The grabber is a tall, full-width drag target (easy to grab) with the small
-   visual pill drawn as a centred pseudo-element. */
+   visual pill drawn as a centred pseudo-element. It stays PINNED to the top of
+   the sheet while the content scrolls under it (sticky + panel background,
+   full-bleed over the sheet's side padding), so the handle is always reachable
+   and draggable. */
 .grabber {
-  height: 26px;
-  margin: 0.1rem 0 0.4rem;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -1rem 0.3rem;
+  padding: 0.5rem 0 0.35rem;
+  background: var(--panel);
   display: flex;
   align-items: center;
   justify-content: center;

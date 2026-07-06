@@ -188,14 +188,12 @@ export function DetailPanel() {
   );
 
   return mobile ? (
-    <div className="sheet-backdrop" onClick={() => selectToken(null)}>
-      <section
-        className="detail sheet"
-        role="dialog"
-        aria-label="Word details"
-        style={sheetStyle}
-        onClick={(e) => e.stopPropagation()}
-      >
+    // No dimming backdrop and pointer-events pass through above the sheet, so
+    // the reader (and its clause highlight) stays visible and scrollable while
+    // the detail is open. Closing is via the ✕, the grabber, or tapping a new
+    // word — a scroll never closes it.
+    <div className="sheet-backdrop detail-backdrop">
+      <section className="detail sheet" role="dialog" aria-label="Word details" style={sheetStyle}>
         <div className="grabber" {...grabberProps} />
         {body}
       </section>
