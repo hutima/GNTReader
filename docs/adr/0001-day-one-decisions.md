@@ -63,6 +63,17 @@ guided mode, export (SVG/PDF/PNG), parallel English alignment (21 MB of data;
 MVP uses token glosses instead), OpenText and Nestle1904 sources (SBLGNT only
 for MVP; Nestle1904 is a possible follow-up).
 
+### Why Lowfat (syntax-tree) files rather than a text-only corpus
+
+Text-only editions of SBLGNT/WLC exist on GitHub, but the app deliberately
+fetches the MACULA **Lowfat syntax-tree** files and reads only their `<w>`
+leaves. Rationale (owner request, 2026-07-06): the Lowfat files carry the
+morphology/gloss/Strong's attributes the reader needs anyway, AND retain the
+full `<wg>` tree — so a future diagram/syntax view can reuse the exact same
+cached corpus files with a new adapter, no data migration. The cost (larger
+XML than plain text) is mitigated by the SW runtime cache and the
+IndexedDB normalized-chapter cache.
+
 ## Data sources
 
 - GNT: MACULA Greek SBLGNT Lowfat (Clear-Bible/macula-greek, CC BY 4.0;
