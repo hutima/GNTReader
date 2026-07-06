@@ -1,0 +1,90 @@
+:root {
+  --bg: #f5f7fa;
+  --fg: #1f2933;
+  --muted: #52606d;
+  --line: #d9e2ec;
+  --accent: #2b6cb0;
+  --accent-soft: #ebf4ff;
+  --panel: #ffffff;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15191e;
+    --fg: #e4e7eb;
+    --muted: #9aa5b1;
+    --line: #323f4b;
+    --accent: #63b3ed;
+    --accent-soft: #1a2c3d;
+    --panel: #1f2933;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    16px/1.6 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+/* Original-language font stacks: legible diacritics / vowel points. */
+.grc {
+  font-family: 'SBL Greek', 'Gentium Plus', Gentium, 'Palatino Linotype', Palatino, Georgia, serif;
+}
+.hbo {
+  font-family: 'SBL Hebrew', 'Ezra SIL', 'Taamey Frank CLM', 'Times New Roman', serif;
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.brand {
+  font-size: 1rem;
+  margin: 0;
+  margin-right: auto;
+}
+.badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  background: none;
+}
+.badge-action {
+  color: var(--accent);
+  border-color: var(--accent);
+  cursor: pointer;
+}
+.reader {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+.placeholder {
+  color: var(--muted);
+}
