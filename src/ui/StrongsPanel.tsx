@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReadingLanguage } from '@/domain/schema';
 import { loadStrongs, searchStrongs, type StrongsEntry } from '@/io/strongs';
 import { useAppStore } from '@/state/store';
+import { useSheetDrag } from './useSheetDrag';
 
 /**
  * Strong's lexicon search: by number, lemma, transliteration, gloss, or KJV
@@ -13,6 +14,7 @@ export function StrongsPanel() {
   const initialQuery = useAppStore((s) => s.strongsQuery);
   const openPanel = useAppStore((s) => s.openPanel);
   const openSearch = useAppStore((s) => s.openSearch);
+  const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
   const [language, setLanguage] = useState<ReadingLanguage>(() => {
     // A G/H-prefixed prefill picks its own language; else follow the text.
@@ -55,9 +57,10 @@ export function StrongsPanel() {
         className="panel-sheet"
         role="dialog"
         aria-label="Strong’s lexicon"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="grabber" aria-hidden="true" />
+        <div className="grabber" {...grabberProps} />
         <div className="field-row">
           <label className="field grow">
             <span>Strong’s search</span>
