@@ -217,6 +217,14 @@ button {
   direction: rtl;
   font-size: calc(1.45rem * var(--reading-scale, 1));
 }
+/* Both mode: the stacked gloss defines each row's height, so a row of only
+   known words (no glosses) snaps up while glossed rows stay tall. */
+.verses.mode-both {
+  line-height: 1.4;
+}
+.verses.mode-both .token-stack {
+  padding-bottom: 0.3em;
+}
 .verse-num {
   color: var(--accent);
   font-size: 0.7em;
@@ -271,7 +279,10 @@ button {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  vertical-align: text-bottom;
+  /* Top-align so every word's surface sits on the same row; the gloss hangs
+     below. A known word keeps the slot but has no gloss, so its row only
+     shrinks when EVERY word in that row is known. */
+  vertical-align: top;
 }
 .token-stack .under {
   font-size: 0.6em;
@@ -624,6 +635,64 @@ button.hit:active {
   background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
+}
+/* In gloss mode there is no gloss to drop, so a known word is marked with a
+   subtle "learned" underline. (In both mode the vanished gloss is the cue.) */
+.verses.mode-gloss .token.known {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, #16a34a 65%, transparent);
+}
+
+/* Known-words list modal. */
+.known-group {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.known-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.known-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.1rem;
+  border-top: 1px solid var(--line);
+}
+.known-list .known-lemma {
+  font-size: 1.15rem;
+}
+.known-list .known-sig {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.known-list .grow {
+  flex: 1;
+}
+.known-x {
+  min-width: var(--touch);
+  min-height: var(--touch);
+  border-radius: 10px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+.known-x:active {
+  background: var(--accent-soft);
+  color: #c53030;
 }
 
 /* --- Glossable values (help affordance) ----------------------------------- */

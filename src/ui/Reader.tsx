@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { ReadingChapter } from '@/domain/schema';
+import type { ReadingChapter, ReadingToken } from '@/domain/schema';
 import { bookInfo } from '@/io/books';
 import { loadChapter, prefetchAdjacent } from '@/io/sources';
 import { useAppStore } from '@/state/store';
 import { VerseView } from './VerseView';
+import { lexemeKey, parseKey } from './vocab';
 
 /**
  * Continuous-scroll reading surface. Keeps a sliding WINDOW of chapters around
@@ -23,9 +24,29 @@ export function Reader() {
   const clearTargetVerse = useAppStore((s) => s.clearTargetVerse);
   const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
   const vocabMode = useAppStore((s) => s.vocabMode);
+  const vocabMarkLexeme = useAppStore((s) => s.vocabMarkLexeme);
   const knownLexemes = useAppStore((s) => s.knownLexemes);
   const knownParses = useAppStore((s) => s.knownParses);
+  const markKnown = useAppStore((s) => s.markKnown);
+  const unmarkKnown = useAppStore((s) => s.unmarkKnown);
   const selectedClauseId = selectedToken?.syntax?.clauseId ?? null;
+
+  // Long-press toggles a word known — the whole lexeme or just this parse,
+  // per the Settings preference (falls back to parse when there is no lemma).
+  const toggleKnown = useCallback(
+    (token: ReadingToken) => {
+      const lk = vocabMarkLexeme ? lexemeKey(token) : null;
+      if (lk) {
+        if (knownLexemes.has(lk)) unmarkKnown('lexeme', lk);
+        else markKnown('lexeme', lk);
+        return;
+      }
+      const pk = parseKey(token);
+      if (knownParses.has(pk)) unmarkKnown('parse', pk);
+      else markKnown('parse', pk);
+    },
+    [vocabMarkLexeme, knownLexemes, knownParses, markKnown, unmarkKnown],
+  );
 
   const [chapters, setChapters] = useState<ReadingChapter[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -234,7 +255,10 @@ export function Reader() {
               <h2 className="chapter-heading">
                 {data.book} {data.chapter}
               </h2>
-              <p className="verses" lang={data.language === 'hbo' ? 'he' : 'el'}>
+              <p
+                className={`verses mode-${displayMode}`}
+                lang={data.language === 'hbo' ? 'he' : 'el'}
+              >
                 {data.verses.map((v) => (
                   <VerseView
                     key={v.id}
@@ -246,6 +270,7 @@ export function Reader() {
                     vocabOn={vocabMode}
                     knownLexemes={knownLexemes}
                     knownParses={knownParses}
+                    onMark={toggleKnown}
                     onSelect={selectToken}
                   />
                 ))}

@@ -11,6 +11,9 @@ interface Props {
   synClass?: string;
   /** Vocabulary mode: the reader has marked this word known — hide its gloss. */
   known?: boolean;
+  /** What a long-press does: reveal the gloss, or mark the word known. */
+  longPressAction?: 'gloss' | 'mark';
+  onMark?(token: ReadingToken): void;
   onSelect(token: ReadingToken): void;
 }
 
@@ -30,12 +33,24 @@ const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_PX = 10;
 
 /**
- * One tappable token. A tap opens the detail panel; a tap-hold (long press)
- * reveals just the English gloss in a transient bubble without opening the
- * panel. `after` renders OUTSIDE the tappable area so the highlight hugs the
- * word. Gloss mode replaces the surface; both mode stacks the gloss underneath.
+ * One tappable token. A tap opens the detail panel. A tap-hold (long press)
+ * either reveals the English gloss (original mode) or, in gloss/both mode with
+ * vocabulary mode on, toggles the word known (`longPressAction`). `after`
+ * renders OUTSIDE the tappable area so the highlight hugs the word. Both mode
+ * stacks the gloss under the surface; a known word keeps its slot but drops the
+ * gloss, so it stays on the same row and the row only collapses when every word
+ * in it is known.
  */
-export function TokenSpan({ token, mode, selected, synClass, known, onSelect }: Props) {
+export function TokenSpan({
+  token,
+  mode,
+  selected,
+  synClass,
+  known,
+  longPressAction = 'gloss',
+  onMark,
+  onSelect,
+}: Props) {
   const { mark, space } = afterParts(token.after);
   const surface = <span className={token.language}>{token.surface}</span>;
 
@@ -57,7 +72,8 @@ export function TokenSpan({ token, mode, selected, synClass, known, onSelect }: 
     clearTimer();
     timer.current = window.setTimeout(() => {
       longPressed.current = true;
-      setShowGloss(true);
+      if (longPressAction === 'mark') onMark?.(token);
+      else setShowGloss(true);
     }, LONG_PRESS_MS);
   };
   const onPointerMove = (e: ReactPointerEvent) => {
@@ -76,7 +92,7 @@ export function TokenSpan({ token, mode, selected, synClass, known, onSelect }: 
   };
   const onClick = () => {
     if (longPressed.current) {
-      // The long press already revealed the gloss; don't also open the panel.
+      // The long press already acted (revealed gloss / marked known).
       longPressed.current = false;
       return;
     }
@@ -87,7 +103,9 @@ export function TokenSpan({ token, mode, selected, synClass, known, onSelect }: 
     <>
       <button
         type="button"
-        className={`token${selected ? ' selected' : ''}${synClass ? ` ${synClass}` : ''}`}
+        className={`token${selected ? ' selected' : ''}${synClass ? ` ${synClass}` : ''}${
+          known ? ' known' : ''
+        }`}
         onClick={onClick}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -98,16 +116,14 @@ export function TokenSpan({ token, mode, selected, synClass, known, onSelect }: 
       >
         {mode === 'original' && surface}
         {mode === 'gloss' && <span className="token-gloss">{displayGloss(token)}</span>}
-        {/* Both mode: known words drop their gloss (progressive glossing). */}
-        {mode === 'both' &&
-          (known ? (
-            surface
-          ) : (
-            <span className="token-stack">
-              {surface}
-              <span className="token-gloss under">{displayGloss(token)}</span>
-            </span>
-          ))}
+        {/* Both mode: known words keep the stack slot but drop the gloss, so
+            their surface stays aligned with the glossed words on the same row. */}
+        {mode === 'both' && (
+          <span className="token-stack">
+            {surface}
+            {!known && <span className="token-gloss under">{displayGloss(token)}</span>}
+          </span>
+        )}
         {showGloss && (
           <span className="gloss-bubble" role="tooltip">
             {displayGloss(token)}

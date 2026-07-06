@@ -7,6 +7,14 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ### Added
 
+- Vocabulary refinements: long-press a word (Gloss/Both mode) to toggle it
+  known; a Settings option chooses whether long-press marks the whole lexeme or
+  just this parse (long-press in Original mode still reveals the gloss). A
+  "Known words" modal lists marked lexemes and forms alphabetically, each
+  removable with an ✕. In Both mode a known word keeps its row slot (surface
+  aligned with the glossed words) and a row only collapses when every word in
+  it is known.
+
 - Vocabulary mode (Settings toggle, default off): in Both mode, mark a word
   known from its detail panel — either the whole lexeme or just this parse —
   and its gloss drops away, so only the words still being learned keep a gloss.

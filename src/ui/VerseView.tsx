@@ -17,6 +17,8 @@ interface Props {
   vocabOn: boolean;
   knownLexemes: Set<string>;
   knownParses: Set<string>;
+  /** Toggle a word known (long-press in gloss/both mode). */
+  onMark(token: ReadingToken): void;
   onSelect(token: ReadingToken): void;
 }
 
@@ -35,10 +37,13 @@ export const VerseView = memo(function VerseView({
   vocabOn,
   knownLexemes,
   knownParses,
+  onMark,
   onSelect,
 }: Props) {
-  const vocabActive = vocabOn && mode === 'both';
   const rtl = verse.language === 'hbo' && mode !== 'gloss';
+  // Vocabulary marking / known-styling apply where glosses are in play.
+  const vocabActive = vocabOn && (mode === 'gloss' || mode === 'both');
+  const longPressAction = vocabActive ? 'mark' : 'gloss';
   return (
     <span className="verse" id={`v-${verse.chapter}-${verse.verse}`}>
       <sup className="verse-num">{verse.verse}</sup>
@@ -57,6 +62,8 @@ export const VerseView = memo(function VerseView({
               selected={t.id === selectedId}
               synClass={synClass}
               known={known}
+              longPressAction={longPressAction}
+              onMark={onMark}
               onSelect={onSelect}
             />
           );
