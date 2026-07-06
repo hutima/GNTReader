@@ -578,6 +578,30 @@ button.hit:active {
   text-decoration-color: var(--muted);
   cursor: help;
 }
+/* Tap-to-reveal help term (part of speech / morph code): tapping the term
+   shows its explanation inline beneath it — works on touch, where `title`
+   tooltips never appear. */
+.help-term-wrap {
+  display: inline;
+}
+.help-term {
+  font: inherit;
+  color: inherit;
+}
+.help-term.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.help-note {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--accent-soft);
+  color: var(--fg);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  max-width: 24rem;
+}
 
 /* --- Modal (mandatory update overlay) ------------------------------------- */
 .modal-backdrop {
