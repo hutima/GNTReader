@@ -183,6 +183,29 @@ export function Reader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchorKey]);
 
+  // Selecting a word the detail sheet would cover (or that is off-screen):
+  // bring it to the middle of the still-visible reader area. No-op if it is
+  // already fully visible — e.g. the desktop side panel, which covers nothing.
+  const selectedTokenId = selectedToken?.id ?? null;
+  useEffect(() => {
+    if (!selectedTokenId) return;
+    const scroller = scrollerRef.current;
+    const el = scroller?.querySelector<HTMLElement>('.token.selected');
+    if (!scroller || !el) return;
+    const scrollerRect = scroller.getBoundingClientRect();
+    // The mobile detail sheet is a fixed overlay; the visible reader area ends
+    // at its top edge. The desktop side panel covers nothing.
+    const sheet = document.querySelector<HTMLElement>('.detail.sheet');
+    const visibleTop = scrollerRect.top;
+    const visibleBottom = sheet
+      ? Math.min(scrollerRect.bottom, sheet.getBoundingClientRect().top)
+      : scrollerRect.bottom;
+    const rect = el.getBoundingClientRect();
+    if (rect.top >= visibleTop && rect.bottom <= visibleBottom) return; // already visible
+    const delta = (rect.top + rect.bottom) / 2 - (visibleTop + visibleBottom) / 2;
+    scroller.scrollBy({ top: delta, behavior: 'smooth' });
+  }, [selectedTokenId]);
+
   return (
     <div className="reader" ref={scrollerRef}>
       {error && (
