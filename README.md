@@ -43,6 +43,22 @@ npm run dev      # http://localhost:5173
 6. After a redeploy with changes: an unobtrusive "Refresh now" appears; the
    app updates only after tapping it (never mid-use).
 
+### Real-browser smoke
+
+`docs/verification/browser-smoke.mjs` drives the built app in headless
+Chromium: fixture load, token detail, gloss mode, continuous-scroll
+append/prepend (with drift measurement), morphology + Strong's search
+click-through, Hebrew RTL, and offline reload. Setup instructions are at the
+top of the script.
+
+## Deploying (GitHub Pages)
+
+The build is fully static and subpath-safe (`base: './'`). Publish `dist/`
+to Pages (e.g. an `actions/deploy-pages` workflow or a `gh-pages` branch).
+Before claiming a deploy works, run the offline smoke checklist above
+against the deployed URL, and remember FL-001: any change to cached data
+shapes/URLs must bump `CORPUS_CACHE` in `src/sw.ts` in the same commit.
+
 ## Data sources
 
 All corpus data is CC BY 4.0 / public-domain material fetched on demand from
