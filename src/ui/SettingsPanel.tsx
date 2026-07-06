@@ -9,6 +9,7 @@ import {
   type ThemeChoice,
 } from '@/state/store';
 import { useSheetDrag } from './useSheetDrag';
+import { KnownWordsModal } from './KnownWordsModal';
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
   { id: 'system', label: 'System' },
@@ -45,8 +46,11 @@ export function SettingsPanel() {
   const setSyntaxHighlight = useAppStore((s) => s.setSyntaxHighlight);
   const vocabMode = useAppStore((s) => s.vocabMode);
   const setVocabMode = useAppStore((s) => s.setVocabMode);
+  const vocabMarkLexeme = useAppStore((s) => s.vocabMarkLexeme);
+  const setVocabMarkLexeme = useAppStore((s) => s.setVocabMarkLexeme);
   const resetKnown = useAppStore((s) => s.resetKnown);
   const knownCount = useAppStore((s) => s.knownLexemes.size + s.knownParses.size);
+  const [showKnown, setShowKnown] = useState(false);
   const { status, updateAvailable, checkForUpdate, clearCachesAndReload } = usePwa();
   const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
@@ -82,7 +86,8 @@ export function SettingsPanel() {
   const statusLabel = STATUS_LABEL[status] ?? '';
 
   return (
-    <div className="sheet-backdrop" onClick={() => openPanel('none')}>
+    <>
+      <div className="sheet-backdrop" onClick={() => openPanel('none')}>
       <section
         className="panel-sheet"
         role="dialog"
@@ -197,14 +202,48 @@ export function SettingsPanel() {
                 </button>
               </div>
             </div>
+            {vocabMode && (
+              <div className="settings-row">
+                <div className="label">
+                  <span>Long-press marks</span>
+                  <small>Tap-hold a word in Gloss/Both mode to mark it known</small>
+                </div>
+                <div className="segmented" role="group" aria-label="Long-press marks">
+                  <button
+                    type="button"
+                    aria-pressed={!vocabMarkLexeme}
+                    className={!vocabMarkLexeme ? 'on' : ''}
+                    onClick={() => setVocabMarkLexeme(false)}
+                  >
+                    This form
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={vocabMarkLexeme}
+                    className={vocabMarkLexeme ? 'on' : ''}
+                    onClick={() => setVocabMarkLexeme(true)}
+                  >
+                    Whole word
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="settings-actions">
+              <button
+                type="button"
+                className="mini"
+                disabled={knownCount === 0}
+                onClick={() => setShowKnown(true)}
+              >
+                Known words{knownCount > 0 ? ` (${knownCount})` : ''}
+              </button>
               <button
                 type="button"
                 className="mini reject"
                 disabled={knownCount === 0}
                 onClick={() => resetKnown()}
               >
-                Reset known words{knownCount > 0 ? ` (${knownCount})` : ''}
+                Reset
               </button>
             </div>
           </section>
@@ -283,6 +322,8 @@ export function SettingsPanel() {
           </section>
         </div>
       </section>
-    </div>
+      </div>
+      {showKnown && <KnownWordsModal onClose={() => setShowKnown(false)} />}
+    </>
   );
 }
