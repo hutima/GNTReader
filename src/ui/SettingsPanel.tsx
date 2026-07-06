@@ -43,6 +43,10 @@ export function SettingsPanel() {
   const setReadingScale = useAppStore((s) => s.setReadingScale);
   const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
   const setSyntaxHighlight = useAppStore((s) => s.setSyntaxHighlight);
+  const vocabMode = useAppStore((s) => s.vocabMode);
+  const setVocabMode = useAppStore((s) => s.setVocabMode);
+  const resetKnown = useAppStore((s) => s.resetKnown);
+  const knownCount = useAppStore((s) => s.knownLexemes.size + s.knownParses.size);
   const { status, updateAvailable, checkForUpdate, clearCachesAndReload } = usePwa();
   const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
@@ -159,6 +163,49 @@ export function SettingsPanel() {
                   On
                 </button>
               </div>
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <h3>Vocabulary</h3>
+            <p className="settings-note">
+              In Both mode, hide the gloss under words you&apos;ve marked known, so only the words
+              you&apos;re still learning keep a gloss. Mark words (or a single form) from a word&apos;s
+              detail panel.
+            </p>
+            <div className="settings-row">
+              <div className="label">
+                <span>Vocabulary mode</span>
+                <small>Hide glosses for known words (Both mode)</small>
+              </div>
+              <div className="segmented" role="group" aria-label="Vocabulary mode">
+                <button
+                  type="button"
+                  aria-pressed={!vocabMode}
+                  className={!vocabMode ? 'on' : ''}
+                  onClick={() => setVocabMode(false)}
+                >
+                  Off
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={vocabMode}
+                  className={vocabMode ? 'on' : ''}
+                  onClick={() => setVocabMode(true)}
+                >
+                  On
+                </button>
+              </div>
+            </div>
+            <div className="settings-actions">
+              <button
+                type="button"
+                className="mini reject"
+                disabled={knownCount === 0}
+                onClick={() => resetKnown()}
+              >
+                Reset known words{knownCount > 0 ? ` (${knownCount})` : ''}
+              </button>
             </div>
           </section>
 

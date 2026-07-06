@@ -22,6 +22,9 @@ export function Reader() {
   const selectToken = useAppStore((s) => s.selectToken);
   const clearTargetVerse = useAppStore((s) => s.clearTargetVerse);
   const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
+  const vocabMode = useAppStore((s) => s.vocabMode);
+  const knownLexemes = useAppStore((s) => s.knownLexemes);
+  const knownParses = useAppStore((s) => s.knownParses);
   const selectedClauseId = selectedToken?.syntax?.clauseId ?? null;
 
   const [chapters, setChapters] = useState<ReadingChapter[]>([]);
@@ -240,6 +243,9 @@ export function Reader() {
                     selectedId={selectedToken?.id ?? null}
                     selectedClauseId={selectedClauseId}
                     syntaxOn={syntaxHighlight}
+                    vocabOn={vocabMode}
+                    knownLexemes={knownLexemes}
+                    knownParses={knownParses}
                     onSelect={selectToken}
                   />
                 ))}

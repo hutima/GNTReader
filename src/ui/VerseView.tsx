@@ -3,6 +3,7 @@ import type { ReadingToken, ReadingVerse } from '@/domain/schema';
 import type { DisplayMode } from '@/state/store';
 import { TokenSpan } from './TokenSpan';
 import { roleClass } from './syntax';
+import { isKnown } from './vocab';
 
 interface Props {
   verse: ReadingVerse;
@@ -12,6 +13,10 @@ interface Props {
   selectedClauseId: string | null;
   /** Whether clause/role highlighting is enabled (Settings). */
   syntaxOn: boolean;
+  /** Vocabulary mode: hide glosses for known words (Both mode only). */
+  vocabOn: boolean;
+  knownLexemes: Set<string>;
+  knownParses: Set<string>;
   onSelect(token: ReadingToken): void;
 }
 
@@ -27,8 +32,12 @@ export const VerseView = memo(function VerseView({
   selectedId,
   selectedClauseId,
   syntaxOn,
+  vocabOn,
+  knownLexemes,
+  knownParses,
   onSelect,
 }: Props) {
+  const vocabActive = vocabOn && mode === 'both';
   const rtl = verse.language === 'hbo' && mode !== 'gloss';
   return (
     <span className="verse" id={`v-${verse.chapter}-${verse.verse}`}>
@@ -39,6 +48,7 @@ export const VerseView = memo(function VerseView({
             syntaxOn && selectedClauseId && t.syntax?.clauseId === selectedClauseId
               ? roleClass(t.syntax?.role)
               : undefined;
+          const known = vocabActive && isKnown(t, knownLexemes, knownParses);
           return (
             <TokenSpan
               key={t.id}
@@ -46,6 +56,7 @@ export const VerseView = memo(function VerseView({
               mode={mode}
               selected={t.id === selectedId}
               synClass={synClass}
+              known={known}
               onSelect={onSelect}
             />
           );
