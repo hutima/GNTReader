@@ -5,6 +5,23 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ## [Unreleased]
 
+### Changed
+
+- Strong's display glosses modernized (105 entries across the Greek and Hebrew
+  lexicons, `public/lexicon/`). Archaic pronouns and forms are gone (`thou/thee/
+  thine` → `you/yours`, `ye are` → `you are`, `verily` → `truly`, `lo!` →
+  `look!`, `hither/thither` → `here/there`, `betwixt` → `between`, `whilst` →
+  `while`); Canadian spelling throughout (`colour`, `honour`, `labour`,
+  `splendour`, `vigour`, `armour`, `neighbour`, `centre`, `plough`, …); and
+  glosses whose meaning had drifted or were truncation artifacts were corrected
+  (`the quick` → `living flesh`, `vile conversation` → `obscene speech`,
+  `imagine` → `to suppose`, `holy Writ` → `Scripture`, and several `"hence"`
+  stubs restored to their real sense, e.g. H505 → `a thousand`, H502 →
+  `to learn`). Only the displayed `g` field changed; the searched KJV-rendering
+  (`k`) field is untouched so English-term search still resolves KJV vocabulary.
+  Verified: only `g` fields differ, no entries lost, JSON round-trips
+  byte-stably, and the built app serves the new glosses with no console errors.
+
 ### Fixed
 
 - Word-detail sheet (mobile) is capped at ~45% of the screen and scrolls
