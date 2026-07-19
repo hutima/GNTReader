@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useInstallPrompt } from '@/pwa/install';
 import { usePwa } from '@/pwa/pwa';
 import { downloadAllScripture, type DownloadResult } from '@/io/download';
 import {
@@ -52,6 +53,8 @@ export function SettingsPanel() {
   const knownCount = useAppStore((s) => s.knownLexemes.size + s.knownParses.size);
   const [showKnown, setShowKnown] = useState(false);
   const { status, updateAvailable, checkForUpdate, clearCachesAndReload } = usePwa();
+  const { canInstall, isStandalone, isIos, promptInstall } = useInstallPrompt();
+  const [showIosHelp, setShowIosHelp] = useState(false);
   const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
   const [dl, setDl] = useState<DlState | null>(null);
@@ -97,6 +100,86 @@ export function SettingsPanel() {
       >
         <div className="grabber" {...grabberProps} />
         <div className="settings">
+          <section className="settings-section about-author">
+            <h3>About the author</h3>
+            <p className="settings-note">
+              GNT Reader is maintained by Timothy Hutama, an MTS student at Wycliffe College. The
+              author makes no guarantees about the content but has made a best attempt to make
+              sure everything is accurate.
+            </p>
+            <p className="settings-note">
+              Timothy blogs at{' '}
+              <a href="https://definedfaith.wordpress.com/" target="_blank" rel="noopener noreferrer">
+                definedfaith.wordpress.com
+              </a>
+              .
+            </p>
+            <p className="settings-note">
+              If you have comments or issues, please reach out on{' '}
+              <a href="https://www.linkedin.com/in/timothyhutama/" target="_blank" rel="noopener noreferrer">
+                LinkedIn
+              </a>
+              .
+            </p>
+            <div className="settings-note">
+              <span>Other projects by Timothy:</span>
+              <ul className="about-links">
+                <li>
+                  <a
+                    href="https://hutima.github.io/Lectio-Memorization/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Bible &amp; catechism memorization
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://hutima.github.io/ScriptureDiagrammer/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Scripture Diagrammer
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://hutima.github.io/PCA_Ordination_Study/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    PCA ordination study
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <p className="settings-note">
+              If you&apos;d like to buy me a coffee as thanks, you can send a gift via e-transfer
+              to <a href="mailto:t.hutama@queensu.ca">t.hutama@queensu.ca</a> or Venmo at{' '}
+              <strong>@hutima</strong>.
+            </p>
+            {!isStandalone && (canInstall || isIos) && (
+              <div className="settings-row">
+                <div className="label">
+                  <span>Install this app</span>
+                  <small>Works offline, opens full screen.</small>
+                </div>
+                <button
+                  type="button"
+                  className="mini"
+                  onClick={() => (canInstall ? void promptInstall() : setShowIosHelp((v) => !v))}
+                >
+                  {canInstall ? 'Install' : 'How to install'}
+                </button>
+              </div>
+            )}
+            {!isStandalone && !canInstall && isIos && showIosHelp && (
+              <p className="settings-note">
+                Tap the Share button, then &quot;Add to Home Screen&quot;, then Add.
+              </p>
+            )}
+          </section>
+
           <section className="settings-section">
             <h3>Appearance</h3>
             <div className="settings-row">

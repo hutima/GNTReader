@@ -903,3 +903,19 @@ button.hit:active {
   line-height: 1.45;
   margin: 0;
 }
+.settings-note a {
+  color: var(--accent);
+}
+.about-author {
+  gap: 0.45rem;
+}
+.about-links {
+  margin: 0.2rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.about-links a {
+  color: var(--accent);
+}

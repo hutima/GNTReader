@@ -24,7 +24,10 @@ CLAUDE.md); commit+push after each milestone for resumability.
 
 - [ ] M1 Scout: codebase map + PCA about/install pattern + ScriptureDiagrammer
       tutorial pattern (3 parallel agents) → findings distilled below.
-- [ ] M2 Implement: About-the-author + install button (top of Settings).
+- [x] M2 Implement: About-the-author + install button (top of Settings) —
+      src/pwa/install.ts (beforeinstallprompt capture + useInstallPrompt hook),
+      SettingsPanel first section, tests/install-prompt.test.ts. 51/51 tests
+      pass (re-verified by orchestrator, not just implementer claim).
 - [ ] M3 Implement: vocab default + how-to-use both modes + skippable guided
       tutorial (mobile + desktop).
 - [ ] M4 Implement: import/export settings/progress JSON (bottom of Settings).
