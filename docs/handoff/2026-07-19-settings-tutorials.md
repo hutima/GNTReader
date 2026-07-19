@@ -28,8 +28,14 @@ CLAUDE.md); commit+push after each milestone for resumability.
       src/pwa/install.ts (beforeinstallprompt capture + useInstallPrompt hook),
       SettingsPanel first section, tests/install-prompt.test.ts. 51/51 tests
       pass (re-verified by orchestrator, not just implementer claim).
-- [ ] M3 Implement: vocab default + how-to-use both modes + skippable guided
-      tutorial (mobile + desktop).
+- [x] M3 Implement: vocab default + how-to-use + skippable first-launch vocab
+      tutorial — store defaults 'both'/vocab-on (first-run only),
+      gr:tutorialSeen + TutorialModal (5 steps, dots, Back/Next/Skip, final
+      "Get started", no backdrop dismiss), "How to use" section + Replay tour,
+      docs/config.md updated, tests/tutorial.test.tsx. Copy corrected by
+      implementer: long-press TOGGLES known (Reader.tsx toggleKnown). 68/68
+      tests (orchestrator re-verified); implementer browser-checked both
+      viewports incl. persistence across reload.
 - [x] M4 Implement: import/export settings/progress JSON (bottom of Settings) —
       src/state/backup.ts (buildBackup/parseBackup/applyBackup, zod-validated,
       never throws), store gains restoreKnown + restorePosition bulk setters

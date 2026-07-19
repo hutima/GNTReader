@@ -40,6 +40,7 @@ interface DlState {
 export function SettingsPanel() {
   const openPanel = useAppStore((s) => s.openPanel);
   const openStrongs = useAppStore((s) => s.openStrongs);
+  const openTutorial = useAppStore((s) => s.openTutorial);
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
   const readingScale = useAppStore((s) => s.readingScale);
@@ -218,6 +219,31 @@ export function SettingsPanel() {
                 Tap the Share button, then &quot;Add to Home Screen&quot;, then Add.
               </p>
             )}
+          </section>
+
+          <section className="settings-section">
+            <h3>How to use</h3>
+            <p className="settings-note">
+              Original, Gloss and Both are the three reading views. Both stacks the original text
+              over its English gloss — that&apos;s where vocabulary mode lives.
+            </p>
+            <p className="settings-note">
+              With vocabulary mode on, press and hold a word to mark it known and its gloss goes
+              away — press and hold again to unmark it. You can also mark or unmark a word from
+              its detail panel.
+            </p>
+            <div className="settings-actions">
+              <button
+                type="button"
+                className="mini"
+                onClick={() => {
+                  openTutorial();
+                  openPanel('none');
+                }}
+              >
+                Replay tour
+              </button>
+            </div>
           </section>
 
           <section className="settings-section">

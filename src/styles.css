@@ -831,6 +831,23 @@ button.hit:active {
   margin: 0.4rem 0 0;
 }
 
+/* --- Tutorial step dots (first-launch tour, TutorialModal) ---------------- */
+.tutorial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0 1rem;
+}
+.tutorial-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.tutorial-dot[aria-current='step'] {
+  background: var(--accent);
+}
+
 /* --- Settings sheet ------------------------------------------------------- */
 .settings {
   display: flex;

@@ -7,6 +7,7 @@ import { Reader } from '@/ui/Reader';
 import { SearchPanel } from '@/ui/SearchPanel';
 import { SettingsPanel } from '@/ui/SettingsPanel';
 import { StrongsPanel } from '@/ui/StrongsPanel';
+import { TutorialModal } from '@/ui/TutorialModal';
 import { UpdateModal } from '@/ui/UpdateModal';
 
 const MODES = [
@@ -80,6 +81,7 @@ export default function App() {
       {panel === 'strongs' && <StrongsPanel />}
       {panel === 'settings' && <SettingsPanel />}
 
+      <TutorialModal />
       <UpdateModal />
     </div>
   );
