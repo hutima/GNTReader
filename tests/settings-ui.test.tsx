@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
@@ -22,6 +22,49 @@ afterEach(() => {
 });
 
 describe('settings sheet', () => {
+  it('renders "About the author" first, before Appearance, with correct external links', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Settings' });
+
+    const headings = within(dialog)
+      .getAllByRole('heading', { level: 3 })
+      .map((h) => h.textContent);
+    expect(headings[0]).toBe('About the author');
+    expect(headings.indexOf('About the author')).toBeLessThan(headings.indexOf('Appearance'));
+
+    const blog = within(dialog).getByRole('link', { name: 'definedfaith.wordpress.com' });
+    expect(blog).toHaveAttribute('href', 'https://definedfaith.wordpress.com/');
+    expect(blog).toHaveAttribute('target', '_blank');
+    expect(blog).toHaveAttribute('rel', 'noopener noreferrer');
+
+    const linkedin = within(dialog).getByRole('link', { name: 'LinkedIn' });
+    expect(linkedin).toHaveAttribute('href', 'https://www.linkedin.com/in/timothyhutama/');
+    expect(linkedin).toHaveAttribute('target', '_blank');
+    expect(linkedin).toHaveAttribute('rel', 'noopener noreferrer');
+
+    for (const [name, href] of [
+      ['Bible & catechism memorization', 'https://hutima.github.io/Lectio-Memorization/'],
+      ['Scripture Diagrammer', 'https://hutima.github.io/ScriptureDiagrammer/'],
+      ['PCA ordination study', 'https://hutima.github.io/PCA_Ordination_Study/'],
+    ] as const) {
+      const link = within(dialog).getByRole('link', { name });
+      expect(link).toHaveAttribute('href', href);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    }
+
+    const mail = within(dialog).getByRole('link', { name: 't.hutama@queensu.ca' });
+    expect(mail).toHaveAttribute('href', 'mailto:t.hutama@queensu.ca');
+    expect(mail).not.toHaveAttribute('target');
+
+    expect(dialog).toHaveTextContent('@hutima');
+    // The links list must not point back at GNT Reader itself.
+    expect(within(dialog).queryByText(/GNT Reader/i, { selector: 'a' })).not.toBeInTheDocument();
+  });
+
   it('opens from the header and applies theme + reading-size overrides', async () => {
     const user = userEvent.setup();
     render(<App />);

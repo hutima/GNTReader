@@ -31,6 +31,7 @@ const VOCAB_KEY = 'gr:vocab';
 const VOCAB_MARK_KEY = 'gr:vocabMarkLexeme';
 const KNOWN_LEX_KEY = 'gr:knownLexemes';
 const KNOWN_PARSE_KEY = 'gr:knownParses';
+const TUTORIAL_KEY = 'gr:tutorialSeen';
 
 export type KnownScope = 'lexeme' | 'parse';
 
@@ -61,7 +62,7 @@ function loadMode(): DisplayMode {
   } catch {
     /* fall through to default */
   }
-  return 'original';
+  return 'both';
 }
 
 function loadTheme(): ThemeChoice {
@@ -98,9 +99,10 @@ function loadSyntax(): boolean {
 
 function loadVocab(): boolean {
   try {
-    return localStorage.getItem(VOCAB_KEY) === 'on'; // default off
+    // Default ON — vocabulary mode is the first-run reading experience.
+    return localStorage.getItem(VOCAB_KEY) !== 'off';
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -111,6 +113,18 @@ function loadVocabMarkLexeme(): boolean {
   } catch {
     return false;
   }
+}
+
+const TutorialSeenSchema = z.enum(['on', 'off']);
+
+function loadTutorialSeen(): boolean {
+  try {
+    const raw = localStorage.getItem(TUTORIAL_KEY);
+    if (raw) return TutorialSeenSchema.parse(raw) === 'on';
+  } catch {
+    /* fall through to default */
+  }
+  return false;
 }
 
 function loadKnownSet(key: string): Set<string> {
@@ -173,6 +187,10 @@ interface AppState {
   /** Known dictionary headwords (lexeme keys) and known exact forms (parse keys). */
   knownLexemes: Set<string>;
   knownParses: Set<string>;
+  /** Whether the first-launch tutorial has ever been dismissed (persisted). */
+  tutorialSeen: boolean;
+  /** Whether the tutorial overlay is currently showing (first run, or replay). */
+  tutorialOpen: boolean;
   selectedToken: ReadingToken | null;
   panel: PanelView;
   /** Prefill for the Strong's panel (detail-panel click-through). */
@@ -181,6 +199,12 @@ interface AppState {
   searchPrefill: SearchQuery | null;
 
   navigate(testament: Testament, bookNum: number, chapter: number, verse?: number): void;
+  /**
+   * Restore a saved position (backup import) without navigate()'s other UI
+   * side effects (closing panels, clearing the selection/target verse) —
+   * the equivalent bulk setter for `lastRef`.
+   */
+  restorePosition(testament: Testament, bookNum: number, chapter: number): void;
   clearTargetVerse(): void;
   setDisplayMode(mode: DisplayMode): void;
   setTheme(theme: ThemeChoice): void;
@@ -191,6 +215,12 @@ interface AppState {
   markKnown(scope: KnownScope, key: string): void;
   unmarkKnown(scope: KnownScope, key: string): void;
   resetKnown(): void;
+  /** Bulk-replace both known-word sets wholesale (backup import). */
+  restoreKnown(lexemes: string[], parses: string[]): void;
+  /** Dismiss the tutorial (Skip tour / Get started) — marks it seen, persisted. */
+  closeTutorial(): void;
+  /** Reopen the tutorial (Settings → Replay tour). Does not reset "seen". */
+  openTutorial(): void;
   selectToken(token: ReadingToken | null): void;
   openPanel(panel: PanelView): void;
   openStrongs(query: string): void;
@@ -200,6 +230,7 @@ interface AppState {
 }
 
 const initial = loadPosition();
+const tutorialSeenInitial = loadTutorialSeen();
 
 export const useAppStore = create<AppState>((set) => ({
   testament: initial.testament,
@@ -214,6 +245,8 @@ export const useAppStore = create<AppState>((set) => ({
   vocabMarkLexeme: loadVocabMarkLexeme(),
   knownLexemes: loadKnownSet(KNOWN_LEX_KEY),
   knownParses: loadKnownSet(KNOWN_PARSE_KEY),
+  tutorialSeen: tutorialSeenInitial,
+  tutorialOpen: !tutorialSeenInitial,
   selectedToken: null,
   panel: 'none',
   strongsQuery: '',
@@ -231,6 +264,10 @@ export const useAppStore = create<AppState>((set) => ({
       // toggles and search click-through must not lose it).
       ...(verse === undefined ? { selectedToken: null } : {}),
     });
+  },
+  restorePosition(testament, bookNum, chapter) {
+    safeSet(POSITION_KEY, JSON.stringify({ testament, bookNum, chapter }));
+    set({ testament, bookNum, chapter });
   },
   clearTargetVerse: () => set({ targetVerse: null }),
   setDisplayMode(mode) {
@@ -285,6 +322,18 @@ export const useAppStore = create<AppState>((set) => ({
     safeSet(KNOWN_PARSE_KEY, '[]');
     set({ knownLexemes: new Set(), knownParses: new Set() });
   },
+  restoreKnown(lexemes, parses) {
+    const knownLexemes = new Set(lexemes);
+    const knownParses = new Set(parses);
+    safeSet(KNOWN_LEX_KEY, JSON.stringify([...knownLexemes]));
+    safeSet(KNOWN_PARSE_KEY, JSON.stringify([...knownParses]));
+    set({ knownLexemes, knownParses });
+  },
+  closeTutorial() {
+    safeSet(TUTORIAL_KEY, 'on');
+    set({ tutorialOpen: false, tutorialSeen: true });
+  },
+  openTutorial: () => set({ tutorialOpen: true }),
   selectToken: (token) => set({ selectedToken: token }),
   openPanel: (panel) => set({ panel }),
   openStrongs: (query) => set({ panel: 'strongs', strongsQuery: query }),

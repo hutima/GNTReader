@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { useInstallPrompt } from '@/pwa/install';
 import { usePwa } from '@/pwa/pwa';
 import { downloadAllScripture, type DownloadResult } from '@/io/download';
+import { applyBackup, buildBackup, parseBackup } from '@/state/backup';
 import {
   READING_SCALE_MAX,
   READING_SCALE_MIN,
@@ -38,6 +40,7 @@ interface DlState {
 export function SettingsPanel() {
   const openPanel = useAppStore((s) => s.openPanel);
   const openStrongs = useAppStore((s) => s.openStrongs);
+  const openTutorial = useAppStore((s) => s.openTutorial);
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
   const readingScale = useAppStore((s) => s.readingScale);
@@ -52,12 +55,18 @@ export function SettingsPanel() {
   const knownCount = useAppStore((s) => s.knownLexemes.size + s.knownParses.size);
   const [showKnown, setShowKnown] = useState(false);
   const { status, updateAvailable, checkForUpdate, clearCachesAndReload } = usePwa();
+  const { canInstall, isStandalone, isIos, promptInstall } = useInstallPrompt();
+  const [showIosHelp, setShowIosHelp] = useState(false);
   const { grabberProps, sheetStyle } = useSheetDrag(() => openPanel('none'));
 
   const [dl, setDl] = useState<DlState | null>(null);
   const [dlResult, setDlResult] = useState<DownloadResult | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [backupStatus, setBackupStatus] = useState<{ kind: 'ok' | 'error'; text: string } | null>(
+    null,
+  );
+  const backupFileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -82,6 +91,41 @@ export function SettingsPanel() {
     }
   };
 
+  function exportBackup() {
+    const data = buildBackup();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `gnt-reader-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setBackupStatus({ kind: 'ok', text: 'Backup exported.' });
+  }
+
+  async function importBackup(input: HTMLInputElement) {
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // allow re-importing the same file later
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseBackup(text);
+    if (!parsed.ok) {
+      setBackupStatus({ kind: 'error', text: parsed.error });
+      return;
+    }
+    const summary = applyBackup(parsed.backup);
+    const counts: string[] = [];
+    if (summary.knownLexemes !== null) counts.push(`${summary.knownLexemes} known words`);
+    if (summary.knownParses !== null) counts.push(`${summary.knownParses} known forms`);
+    setBackupStatus({
+      kind: 'ok',
+      text: counts.length ? `Backup restored (${counts.join(', ')}).` : 'Backup restored.',
+    });
+  }
+
   const pct = Math.round(readingScale * 100);
   const statusLabel = STATUS_LABEL[status] ?? '';
 
@@ -97,6 +141,111 @@ export function SettingsPanel() {
       >
         <div className="grabber" {...grabberProps} />
         <div className="settings">
+          <section className="settings-section about-author">
+            <h3>About the author</h3>
+            <p className="settings-note">
+              GNT Reader is maintained by Timothy Hutama, an MTS student at Wycliffe College. The
+              author makes no guarantees about the content but has made a best attempt to make
+              sure everything is accurate.
+            </p>
+            <p className="settings-note">
+              Timothy blogs at{' '}
+              <a href="https://definedfaith.wordpress.com/" target="_blank" rel="noopener noreferrer">
+                definedfaith.wordpress.com
+              </a>
+              .
+            </p>
+            <p className="settings-note">
+              If you have comments or issues, please reach out on{' '}
+              <a href="https://www.linkedin.com/in/timothyhutama/" target="_blank" rel="noopener noreferrer">
+                LinkedIn
+              </a>
+              .
+            </p>
+            <div className="settings-note">
+              <span>Other projects by Timothy:</span>
+              <ul className="about-links">
+                <li>
+                  <a
+                    href="https://hutima.github.io/Lectio-Memorization/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Bible &amp; catechism memorization
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://hutima.github.io/ScriptureDiagrammer/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Scripture Diagrammer
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://hutima.github.io/PCA_Ordination_Study/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    PCA ordination study
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <p className="settings-note">
+              If you&apos;d like to buy me a coffee as thanks, you can send a gift via e-transfer
+              to <a href="mailto:t.hutama@queensu.ca">t.hutama@queensu.ca</a> or Venmo at{' '}
+              <strong>@hutima</strong>.
+            </p>
+            {!isStandalone && (canInstall || isIos) && (
+              <div className="settings-row">
+                <div className="label">
+                  <span>Install this app</span>
+                  <small>Works offline, opens full screen.</small>
+                </div>
+                <button
+                  type="button"
+                  className="mini"
+                  onClick={() => (canInstall ? void promptInstall() : setShowIosHelp((v) => !v))}
+                >
+                  {canInstall ? 'Install' : 'How to install'}
+                </button>
+              </div>
+            )}
+            {!isStandalone && !canInstall && isIos && showIosHelp && (
+              <p className="settings-note">
+                Tap the Share button, then &quot;Add to Home Screen&quot;, then Add.
+              </p>
+            )}
+          </section>
+
+          <section className="settings-section">
+            <h3>How to use</h3>
+            <p className="settings-note">
+              Original, Gloss and Both are the three reading views. Both stacks the original text
+              over its English gloss — that&apos;s where vocabulary mode lives.
+            </p>
+            <p className="settings-note">
+              With vocabulary mode on, press and hold a word to mark it known and its gloss goes
+              away — press and hold again to unmark it. You can also mark or unmark a word from
+              its detail panel.
+            </p>
+            <div className="settings-actions">
+              <button
+                type="button"
+                className="mini"
+                onClick={() => {
+                  openTutorial();
+                  openPanel('none');
+                }}
+              >
+                Replay tour
+              </button>
+            </div>
+          </section>
+
           <section className="settings-section">
             <h3>Appearance</h3>
             <div className="settings-row">
@@ -319,6 +468,33 @@ export function SettingsPanel() {
             </div>
             {updateAvailable && <p className="status-line">An update is ready — see the prompt.</p>}
             {statusLabel && <p className="status-line">{statusLabel}</p>}
+          </section>
+
+          <section className="settings-section">
+            <h3>Backup</h3>
+            <p className="settings-note">
+              Save or restore your settings and known-words progress as a JSON file.
+            </p>
+            <div className="settings-actions">
+              <button type="button" className="mini" onClick={exportBackup}>
+                Export backup
+              </button>
+              <button type="button" className="mini" onClick={() => backupFileRef.current?.click()}>
+                Import backup
+              </button>
+              <input
+                ref={backupFileRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => void importBackup(e.currentTarget)}
+              />
+            </div>
+            {backupStatus && (
+              <p className={backupStatus.kind === 'error' ? 'settings-note error' : 'settings-note'}>
+                {backupStatus.text}
+              </p>
+            )}
           </section>
         </div>
       </section>
