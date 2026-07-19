@@ -99,7 +99,18 @@ CLAUDE.md); commit+push after each milestone for resumability.
   Hide button when standalone. We adapt: settings button only (no auto banner),
   allow desktop installs (don't copy the phone-only gate).
 
-### ScriptureDiagrammer tutorial pattern — pending (agent running)
+### ScriptureDiagrammer tutorial pattern — CANCELLED (user stopped the scout)
+
+- Decision: tutorial uses GNT Reader's own .modal/.modal-backdrop conventions
+  (UpdateModal family — same centered-card language as the author's other
+  apps per PCA findings) + standard step-through furniture: progress dots,
+  Back/Next, Skip on every step, final "Get started". No backdrop-dismiss.
+- M3 design fixed by orchestrator: gr:tutorialSeen key (loader pattern),
+  store tutorialOpen/tutorialSeen + openTutorial/closeTutorial, TutorialModal
+  mounted before UpdateModal in App.tsx, 5 steps teaching vocab mode in Both
+  view, "How to use" section (2nd, after About) with Replay tour button,
+  first-run defaults displayMode 'both' + vocabMode true, test setup.ts
+  pre-seeds gr:tutorialSeen=true to keep existing tests clean.
 
 ## Decisions
 
