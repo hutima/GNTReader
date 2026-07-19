@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useInstallPrompt } from '@/pwa/install';
 import { usePwa } from '@/pwa/pwa';
 import { downloadAllScripture, type DownloadResult } from '@/io/download';
+import { applyBackup, buildBackup, parseBackup } from '@/state/backup';
 import {
   READING_SCALE_MAX,
   READING_SCALE_MIN,
@@ -61,6 +62,10 @@ export function SettingsPanel() {
   const [dlResult, setDlResult] = useState<DownloadResult | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [backupStatus, setBackupStatus] = useState<{ kind: 'ok' | 'error'; text: string } | null>(
+    null,
+  );
+  const backupFileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -84,6 +89,41 @@ export function SettingsPanel() {
       setBusy(null);
     }
   };
+
+  function exportBackup() {
+    const data = buildBackup();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `gnt-reader-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setBackupStatus({ kind: 'ok', text: 'Backup exported.' });
+  }
+
+  async function importBackup(input: HTMLInputElement) {
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // allow re-importing the same file later
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseBackup(text);
+    if (!parsed.ok) {
+      setBackupStatus({ kind: 'error', text: parsed.error });
+      return;
+    }
+    const summary = applyBackup(parsed.backup);
+    const counts: string[] = [];
+    if (summary.knownLexemes !== null) counts.push(`${summary.knownLexemes} known words`);
+    if (summary.knownParses !== null) counts.push(`${summary.knownParses} known forms`);
+    setBackupStatus({
+      kind: 'ok',
+      text: counts.length ? `Backup restored (${counts.join(', ')}).` : 'Backup restored.',
+    });
+  }
 
   const pct = Math.round(readingScale * 100);
   const statusLabel = STATUS_LABEL[status] ?? '';
@@ -402,6 +442,33 @@ export function SettingsPanel() {
             </div>
             {updateAvailable && <p className="status-line">An update is ready — see the prompt.</p>}
             {statusLabel && <p className="status-line">{statusLabel}</p>}
+          </section>
+
+          <section className="settings-section">
+            <h3>Backup</h3>
+            <p className="settings-note">
+              Save or restore your settings and known-words progress as a JSON file.
+            </p>
+            <div className="settings-actions">
+              <button type="button" className="mini" onClick={exportBackup}>
+                Export backup
+              </button>
+              <button type="button" className="mini" onClick={() => backupFileRef.current?.click()}>
+                Import backup
+              </button>
+              <input
+                ref={backupFileRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => void importBackup(e.currentTarget)}
+              />
+            </div>
+            {backupStatus && (
+              <p className={backupStatus.kind === 'error' ? 'settings-note error' : 'settings-note'}>
+                {backupStatus.text}
+              </p>
+            )}
           </section>
         </div>
       </section>

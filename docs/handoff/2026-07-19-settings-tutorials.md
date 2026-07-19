@@ -30,7 +30,13 @@ CLAUDE.md); commit+push after each milestone for resumability.
       pass (re-verified by orchestrator, not just implementer claim).
 - [ ] M3 Implement: vocab default + how-to-use both modes + skippable guided
       tutorial (mobile + desktop).
-- [ ] M4 Implement: import/export settings/progress JSON (bottom of Settings).
+- [x] M4 Implement: import/export settings/progress JSON (bottom of Settings) —
+      src/state/backup.ts (buildBackup/parseBackup/applyBackup, zod-validated,
+      never throws), store gains restoreKnown + restorePosition bulk setters
+      (navigate() would close the sheet mid-import — approved deviation),
+      "Backup" last section in SettingsPanel, tests/backup.test.tsx (11 tests).
+      62/62 pass (orchestrator re-verified). Implementer also drove the real
+      file-input/export flow in Chromium (download name, restore, error path).
 - [ ] M5 Verify: typecheck/lint/test/build + real Chromium run, mobile
       (390x844 touch) + desktop viewports, per CLAUDE.md recipe.
 - [ ] M6 Final review, squash-tidy if needed, push. (PR only if user asks.)

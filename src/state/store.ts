@@ -181,6 +181,12 @@ interface AppState {
   searchPrefill: SearchQuery | null;
 
   navigate(testament: Testament, bookNum: number, chapter: number, verse?: number): void;
+  /**
+   * Restore a saved position (backup import) without navigate()'s other UI
+   * side effects (closing panels, clearing the selection/target verse) —
+   * the equivalent bulk setter for `lastRef`.
+   */
+  restorePosition(testament: Testament, bookNum: number, chapter: number): void;
   clearTargetVerse(): void;
   setDisplayMode(mode: DisplayMode): void;
   setTheme(theme: ThemeChoice): void;
@@ -191,6 +197,8 @@ interface AppState {
   markKnown(scope: KnownScope, key: string): void;
   unmarkKnown(scope: KnownScope, key: string): void;
   resetKnown(): void;
+  /** Bulk-replace both known-word sets wholesale (backup import). */
+  restoreKnown(lexemes: string[], parses: string[]): void;
   selectToken(token: ReadingToken | null): void;
   openPanel(panel: PanelView): void;
   openStrongs(query: string): void;
@@ -231,6 +239,10 @@ export const useAppStore = create<AppState>((set) => ({
       // toggles and search click-through must not lose it).
       ...(verse === undefined ? { selectedToken: null } : {}),
     });
+  },
+  restorePosition(testament, bookNum, chapter) {
+    safeSet(POSITION_KEY, JSON.stringify({ testament, bookNum, chapter }));
+    set({ testament, bookNum, chapter });
   },
   clearTargetVerse: () => set({ targetVerse: null }),
   setDisplayMode(mode) {
@@ -284,6 +296,13 @@ export const useAppStore = create<AppState>((set) => ({
     safeSet(KNOWN_LEX_KEY, '[]');
     safeSet(KNOWN_PARSE_KEY, '[]');
     set({ knownLexemes: new Set(), knownParses: new Set() });
+  },
+  restoreKnown(lexemes, parses) {
+    const knownLexemes = new Set(lexemes);
+    const knownParses = new Set(parses);
+    safeSet(KNOWN_LEX_KEY, JSON.stringify([...knownLexemes]));
+    safeSet(KNOWN_PARSE_KEY, JSON.stringify([...knownParses]));
+    set({ knownLexemes, knownParses });
   },
   selectToken: (token) => set({ selectedToken: token }),
   openPanel: (panel) => set({ panel }),

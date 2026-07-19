@@ -906,6 +906,9 @@ button.hit:active {
 .settings-note a {
   color: var(--accent);
 }
+.settings-note.error {
+  color: #c53030;
+}
 .about-author {
   gap: 0.45rem;
 }
