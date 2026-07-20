@@ -32,6 +32,19 @@ PR 1's failure-log entry must be renumbered FL-006→FL-007 at/before merge
 (failure-log.md will conflict — resolve by appending after FL-006).
 PR 1 + PR 2 agents still running.
 
+STATUS 06:3x UTC: **PR 2 MERGED — PR #17** (squash 40175d6; verified by
+lead: 144/144 tests, precache clean, λόγος t=330/derived-from-G3004,
+compound G1607→[1537,4198] exact, λέγω='root'; index 219.7 KB gzip, 99.4%
+glossed; CORPUS_CACHE now corpus-v3; failure-log now has FL-007 =
+happy-dom self-closing-tag mis-nesting, scoped fix + regression tests).
+REMAINING FOR PR 1 MERGE: after the Opus 834px fix lands, merge
+origin/main into this branch again — failure-log.md will conflict (main
+has FL-006 OOM + FL-007 self-closing); renumber the branch's reflow entry
+FL-007→**FL-008** repo-wide (src/ui/Reader.tsx, anchor.ts, BookPicker.tsx,
+store.ts, tests, browser-smoke.mjs, restart.md, config.md debounce row
+refs if any); config.md/data-sources rows: keep all. Then full gates +
+3× browser smoke, THEN PR + merge.
+
 STATUS 06:1x UTC — PR 1: Sonnet implementation COMPLETE (commits 4a72179,
 9df5080, 8290027: anchor.ts, width-gated RO, visibleChapter store field,
 BookPicker highlight, 7+ unit tests, smoke steps 10a-10d; its run: max
