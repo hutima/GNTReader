@@ -4,13 +4,16 @@ Last updated: 2026-07-20. Lead: Fable orchestration session.
 Branch: `claude/ipad-reader-stability-nrdpvf` (currently even with `origin/main`
 except this file). A cold session must be able to resume from here in <5 min.
 
-## OWNER DIRECTIVE (2026-07-20, latest — overrides ordering below)
+## OWNER DIRECTIVE (2026-07-20 04:0x UTC, latest — supersedes earlier pause)
 
-Focus exclusively on **PR 1** (this branch). PR 2 / PR 3 stay PAUSED on the
-backburner — do NOT respawn their implementers until the owner says
-"continue". When PR 1 is complete and verified: open its PR and merge it
-(owner pre-authorized; likely done in the next session). Groundwork PR #15
-is already merged.
+Owner (asleep): continue ALL THREE PRs until tokens run out. PR/merge each
+when complete and verified (pre-authorized). Wake-up retry reminders set
+via send_later: 05:20 UTC (trig_01CDJGsgMC282zs53uKp7hQc) and backup
+08:20 UTC (trig_0152TG798BvgijvQKN7c4dAA) — the owner said their token
+budget resets at "1:20 AM" (timezone unstated; both US-Eastern and
+US-Pacific interpretations covered). Groundwork PR #15 already merged.
+PR 2/3 implementers were respawned (fresh agents continuing the preserved
+worktrees agent-a6f639edbd138d515 / agent-a12428391d7838de3).
 
 ## Mission
 
