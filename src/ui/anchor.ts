@@ -1,13 +1,13 @@
 /**
  * Pure geometry helpers behind two independent scroll-position mechanisms:
  *
- * 1. Width-gated ratio anchor (FL-007): when the reader's own width changes
+ * 1. Width-gated ratio anchor (FL-008): when the reader's own width changes
  *    (opening/closing the desktop side panel at 768–834px flex-shrinks the
  *    column, rewrapping every line), re-seat the verse under the viewport's
  *    midpoint at the same fractional offset it had before the rewrap. This is
  *    orthogonal to the FL-004 height/prepend anchor in Reader.tsx (different
  *    ref, different trigger — a width change vs. a content-height change).
- * 2. Visible-chapter tracking (FL-007): which chapter's heading the reader is
+ * 2. Visible-chapter tracking (FL-008): which chapter's heading the reader is
  *    actually looking at right now, independent of the last *navigated*
  *    chapter (`chapter` in the store) — used for the header title, the
  *    picker's current-chapter highlight, and the persisted last-read
@@ -136,7 +136,7 @@ export function widthChanged(prevWidth: number, nextWidth: number): boolean {
 }
 
 /**
- * Capture-invalidation gate (FL-007): true while the scroller still sits
+ * Capture-invalidation gate (FL-008): true while the scroller still sits
  * exactly where the app last *programmatically* compensated a layout mutation
  * (a width-reflow restore, or an FL-004 prepend/trim) and no user scroll has
  * moved it since. While true the width anchor must NOT be re-captured: adjacent

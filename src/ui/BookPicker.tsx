@@ -11,7 +11,7 @@ import { useSheetDrag } from './useSheetDrag';
 export function BookPicker() {
   const currentTestament = useAppStore((s) => s.testament);
   const currentBookNum = useAppStore((s) => s.bookNum);
-  // The chapter actually scrolled to, not just last-navigated (FL-007) — so
+  // The chapter actually scrolled to, not just last-navigated (FL-008) — so
   // the highlight below follows continuous-scroll reading, not just taps.
   const currentVisibleChapter = useAppStore((s) => s.visibleChapter);
   const navigate = useAppStore((s) => s.navigate);

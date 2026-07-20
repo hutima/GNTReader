@@ -150,7 +150,7 @@ function safeSet(key: string, value: string): void {
 
 /**
  * `visibleChapter` (the chapter the reader is actually scrolled to, distinct
- * from the last *navigated* `chapter` — see Reader.tsx / anchor.ts, FL-007)
+ * from the last *navigated* `chapter` — see Reader.tsx / anchor.ts, FL-008)
  * changes on every scroll tick, so its `gr:lastRef` write is debounced; a
  * `pagehide` listener flushes it immediately so closing the tab never loses
  * the last few hundred ms of reading position. `navigate`/`restorePosition`
@@ -216,7 +216,7 @@ interface AppState {
   chapter: number;
   /** Chapter the reader is actually scrolled to right now — may lag `chapter`
    *  while a range spans multiple chapters. Never feeds back into navigation
-   *  or the Reader's load effect (FL-007). Drives the header title, the
+   *  or the Reader's load effect (FL-008). Drives the header title, the
    *  picker's current-chapter highlight, and the persisted last-read ref. */
   visibleChapter: number;
   /** Verse to scroll to after a navigation (search click-through). */
@@ -252,7 +252,7 @@ interface AppState {
    * the equivalent bulk setter for `lastRef`.
    */
   restorePosition(testament: Testament, bookNum: number, chapter: number): void;
-  /** Reader scroll tracking only (FL-007) — never call this to navigate. */
+  /** Reader scroll tracking only (FL-008) — never call this to navigate. */
   setVisibleChapter(chapter: number): void;
   clearTargetVerse(): void;
   setDisplayMode(mode: DisplayMode): void;

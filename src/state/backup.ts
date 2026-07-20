@@ -68,7 +68,7 @@ export function buildBackup(): BackupFile {
     progress: {
       // The visible (scrolled-to) chapter, not just the last navigated one —
       // a long continuous-scroll session should resume where it was reading,
-      // not snap back to the chapter it happened to have last tapped (FL-007).
+      // not snap back to the chapter it happened to have last tapped (FL-008).
       lastRef: { testament: s.testament, bookNum: s.bookNum, chapter: s.visibleChapter },
       knownLexemes: [...s.knownLexemes],
       knownParses: [...s.knownParses],

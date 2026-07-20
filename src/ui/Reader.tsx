@@ -35,7 +35,7 @@ const MAX_LOADED = WINDOW_RADIUS * 2 + 1; // visible chapter ± 2 → at most 5
  * overflow being reflected in the ANCESTOR span's reported fragment rects
  * (verified in a real Chromium: a verse's bbox ended 20px above a directly
  * nested token's own bbox). Reconstruct the real extent as the union of its
- * tokens' rects instead, so the width-anchor ratio (FL-007) is computed
+ * tokens' rects instead, so the width-anchor ratio (FL-008) is computed
  * against what's actually on screen.
  */
 function verseVisualRect(verseEl: HTMLElement): { top: number; bottom: number } {
@@ -97,7 +97,7 @@ export function Reader() {
   const articleRefs = useRef(new Map<number, HTMLElement>());
   /** Anchor captured before a range mutation; consumed by the layout effect. */
   const anchorRef = useRef<{ chapter: number; top: number } | null>(null);
-  /** Width-reflow ratio anchor (FL-007) — orthogonal to `anchorRef` above:
+  /** Width-reflow ratio anchor (FL-008) — orthogonal to `anchorRef` above:
    *  that one tracks height changes from prepend/trim, this one tracks width
    *  changes from the desktop side panel opening/closing. */
   const widthAnchorRef = useRef<WidthAnchor | null>(null);
@@ -108,7 +108,7 @@ export function Reader() {
   /** The scrollTop value the app itself last WROTE while compensating a layout
    *  mutation (a width reflow's RO restore, or an FL-004 prepend/trim). While
    *  the scroller still sits exactly there — i.e. no user scroll has moved it
-   *  since — the width anchor must NOT be re-captured (FL-007): consecutive
+   *  since — the width anchor must NOT be re-captured (FL-008): consecutive
    *  `.verse` spans share the line where one ends and the next begins, so their
    *  token-union rects overlap by ~a line and `elementFromPoint` at the midpoint
    *  can re-pick the ADJACENT verse. Re-capturing then flips the anchor's
@@ -138,7 +138,7 @@ export function Reader() {
   }, []);
 
   /**
-   * Recompute both FL-007 mechanisms from the currently-committed layout:
+   * Recompute both FL-008 mechanisms from the currently-committed layout:
    * the width-reflow ratio anchor (the `.verse` at the viewport midpoint,
    * and how far through its height that midpoint falls) and the visible
    * chapter (for the header title, picker highlight, and persisted position
@@ -172,7 +172,7 @@ export function Reader() {
 
     // Don't re-capture the width anchor while the scroller still sits exactly
     // where the app last programmatically compensated a layout mutation and no
-    // user scroll has moved it since (FL-007). The reflow's own tail capture
+    // user scroll has moved it since (FL-008). The reflow's own tail capture
     // and the 'scroll' event its scrollTop write fires would otherwise re-pick
     // a DIFFERENT verse in the shared-line overlap zone (adjacent `.verse`
     // spans' token-union rects overlap by ~a line, so `elementFromPoint` at the
@@ -297,7 +297,7 @@ export function Reader() {
         scroller.scrollTop += newTop - anchor.top;
         // Same-content compensation (FL-004 prepend/trim): keep the width anchor
         // stable across it, don't let the tail capture re-pick a neighbour verse
-        // (FL-007). A later user scroll clears this guard.
+        // (FL-008). A later user scroll clears this guard.
         compensatedScrollTopRef.current = scroller.scrollTop;
       }
       anchorRef.current = null;
@@ -335,7 +335,7 @@ export function Reader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extend, rangeKey]);
 
-  // rAF-throttled scroll tracking (FL-007): recompute the width anchor and
+  // rAF-throttled scroll tracking (FL-008): recompute the width anchor and
   // the visible chapter as the reader scrolls. Bound once per scroller mount
   // — `captureAll` is stable (reads refs/getState only), so this never needs
   // to rebind across range changes.
@@ -355,7 +355,7 @@ export function Reader() {
     return () => scroller.removeEventListener('scroll', onScroll);
   }, [captureAll]);
 
-  // Width-gated reflow compensation (FL-007): opening/closing the desktop
+  // Width-gated reflow compensation (FL-008): opening/closing the desktop
   // side panel at 768–834px flex-shrinks the reader column, rewrapping every
   // line and shifting scrollHeight by 130-151% — a plain height change (new
   // chapter loaded) must NOT trigger this, only an actual width change.
@@ -387,7 +387,7 @@ export function Reader() {
           scroller.scrollTop += delta;
           // Mark this as an app-driven position so the tail capture below (and
           // the 'scroll' event this write fires) don't flip the anchor to an
-          // adjacent verse in the shared-line overlap zone (FL-007).
+          // adjacent verse in the shared-line overlap zone (FL-008).
           compensatedScrollTopRef.current = scroller.scrollTop;
         }
       }
@@ -418,7 +418,7 @@ export function Reader() {
   // Deferred TWO frames: on desktop, selecting a token can ALSO mount the
   // side panel in the same commit, which flex-shrinks the reader and
   // triggers the width-anchor's own ResizeObserver-driven scrollTop
-  // compensation (FL-007, above). A React passive effect is not guaranteed
+  // compensation (FL-008, above). A React passive effect is not guaranteed
   // to run after that RO callback — measured in real Chromium, a single
   // requestAnimationFrame deferral still ran BEFORE the RO's notification
   // for the very same resize (RO fired ~0.1ms after that rAF, i.e. later in

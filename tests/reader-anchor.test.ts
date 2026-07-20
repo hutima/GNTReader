@@ -9,7 +9,7 @@ import {
 } from '@/ui/anchor';
 
 /**
- * Pure-logic coverage for FL-007 (iPad panel-reflow jump + visible-chapter
+ * Pure-logic coverage for FL-008 (iPad panel-reflow jump + visible-chapter
  * tracking). All inputs are plain rects/numbers — no DOM required, so these
  * run identically in happy-dom and a real browser.
  */
@@ -124,7 +124,7 @@ describe('atCompensatedScroll (capture-invalidation gate)', () => {
 
   it('suppresses capture while sitting exactly at the compensated position', () => {
     // The width-reflow restore (and the scroll event its write fires) land here;
-    // re-capturing would flip the anchor to a shared-line neighbour (FL-007).
+    // re-capturing would flip the anchor to a shared-line neighbour (FL-008).
     expect(atCompensatedScroll(5000, 5000)).toBe(true);
   });
 

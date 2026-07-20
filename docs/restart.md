@@ -45,9 +45,9 @@ plan, SW policy. Then this file. Branch: `claude/gnt-ot-reading-pwa-yu5dnq`.
 - `state/store.ts` — zustand: position, displayMode, selection, panels;
   localStorage `gr:lastRef`/`gr:displayMode`; `visibleChapter` tracks the
   scrolled-to chapter separately from navigation `chapter` (debounced
-  `gr:lastRef` write + `pagehide` flush — FL-007).
+  `gr:lastRef` write + `pagehide` flush — FL-008).
 - `ui/` — App shell, Reader (sentinels/compensation — see FL-004; width-gated
-  reflow anchor + visible-chapter scroll tracking — FL-007, `ui/anchor.ts`),
+  reflow anchor + visible-chapter scroll tracking — FL-008, `ui/anchor.ts`),
   VerseView/TokenSpan (`after` separator rules), DetailPanel (side panel /
   bottom sheet), BookPicker (current-chapter highlight follows
   `visibleChapter`), SearchPanel, StrongsPanel, morph chips.

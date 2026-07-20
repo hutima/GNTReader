@@ -7,6 +7,7 @@ import { HelpTerm } from './HelpTerm';
 import { useSheetDrag } from './useSheetDrag';
 import { humanizeClauseRule, roleClass, roleLabel } from './syntax';
 import { lexemeKey, parseKey } from './vocab';
+import { WordStudySection } from './WordStudySection';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
@@ -184,6 +185,7 @@ export function DetailPanel() {
           </dd>
         </div>
       </dl>
+      <WordStudySection token={token} openStrongs={openStrongs} />
     </>
   );
 
