@@ -144,8 +144,11 @@ No PR is opened until its branch passes all gates; owner merges.
   sizeReport, tsx runner), gates re-verified by lead (18 files/75 tests),
   pinned SHAs re-verified via git ls-remote. Owner authorized "PR and
   merge if done" (message 2026-07-20).
-- Sonnet implementer: PR 2 `feat/lexeme-word-study` (worktree, off merged
-  main). Spec: generator reads RAW @gloss (Berean) only — @english inert;
+- PAUSED (stopped by user 2026-07-20, do not respawn without need):
+  PR 2 `feat/lexeme-word-study` (worktree, off merged main, NO commits
+  yet; started files: scripts/generate/wordstudy.ts, src/io/wordstudy.ts,
+  tsconfig tweak). Resume = respawn an implementer from the spec below;
+  all design decisions stand. Spec: generator reads RAW @gloss (Berean) only — @english inert;
   identity normalizeStrong (+lemma-fallback map); gloss normalization per
   decision doc; morphgnt strongsgreek.xml derivation (d/dt/r); output
   public/wordstudy/gnt.json (meta+strongs+lemmas); DetailPanel async
@@ -154,8 +157,10 @@ No PR is opened until its branch passes all gates; owner merges.
   isCorpusRequest += /wordstudy/ + CORPUS_CACHE bump same commit;
   globIgnores; ADR-0002; docs; own smoke docs/verification/
   wordstudy-smoke.mjs (port 4321).
-- Sonnet implementer: PR 3 `feat/vocabulary-progress` (worktree, off
-  merged main). Spec: generator via lowfat converters + vocab.ts keys
+- PAUSED (stopped by user 2026-07-20): PR 3 `feat/vocabulary-progress`
+  (worktree, off merged main, NO commits yet; in progress: SettingsPanel
+  button, sw.ts, docs rows, styles — generator was mid-run). Resume =
+  respawn from the spec below; decisions stand. Spec: generator via lowfat converters + vocab.ts keys
   (never re-derived); Shape 3 per-book {L,P,c:[[li,pi,n]]} (li=-1 when no
   lexeme), shards public/progress/gnt.json + ot.json (split OT if >400 KB
   gzip); src/ui/progress.ts pure coverage (OR-semantics, no double count,
