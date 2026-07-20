@@ -21,6 +21,7 @@ One row per configuration axis. Precedence: built-in < config file < env var
 | Strong's result cap | const `STRONGS_RESULT_CAP` | 40 | int > 0 | active | asserted in tests | search | 2026-07-06 |
 | Prefetch radius | const `PREFETCH_CHAPTERS` | 2 | 0-2 | active | asserted in tests | reader | 2026-07-06 |
 | Reader window radius | const `WINDOW_RADIUS` (`src/ui/Reader.tsx`) | 2 | int > 0 (chapters kept each side; far ones dropped) | active | verified-by-reading | reader | 2026-07-06 |
+| Pinned upstream revisions | `scripts/generate/revisions.json` | see file | `{sourceKey: {repo, rev, license}}`; `rev` is a full commit SHA, never a branch | active | build-time generators only fetch this pinned SHA (`fetchPinned`); no runtime effect | data | 2026-07-20 |
 
 No runtime env vars and no secrets exist in this app (static PWA; all data
 sources are public). `.env` is unused; if one is ever added, commit a

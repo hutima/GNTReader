@@ -13,6 +13,26 @@ is included, and none may be added except BSB or ASV (see ADR-0001).
 | Gentium Book Plus (scripture face — Greek) | SIL International, via the `@fontsource/gentium-book-plus` package | SIL Open Font License 1.1 (`src/fonts/Gentium-Book-Plus-OFL.txt`) | Vendored woff2 (greek + greek-ext subsets, weights 400/700) in `src/fonts/`; scripture text and the logo Α/Ω |
 | Source Sans 3 / Source Sans Pro (UI face) | Adobe / SIL, via the `@fontsource/source-sans-3` package | SIL Open Font License 1.1 (`src/fonts/Source-Sans-3-OFL.txt`) | Vendored woff2 (latin + latin-ext subsets, weights 400/600/700) in `src/fonts/`; all non-scripture UI text |
 
+## Generated data (upcoming)
+
+No generated data ships yet. A build-time generator harness
+(`scripts/generate/harness.ts`) exists so future features (e.g. a word-study
+index, a vocabulary-progress index) can be built from pinned upstream
+revisions rather than the runtime-fetched files above:
+
+- Pinned revisions (repo + commit SHA + license) live in
+  `scripts/generate/revisions.json`; generators only ever fetch that exact
+  SHA, never a branch, into a gitignored local cache (`.generate-cache/`).
+- Generators parse MACULA Lowfat XML with the app's own `src/io/lowfat.ts`
+  (same code the reader uses at runtime) so generated keys/tokens match the
+  runtime exactly.
+- No new upstream sources are introduced by this harness itself; the pinned
+  Strong's dictionary source (`morphgnt/strongs-dictionary-xml`, CC0) is a
+  different machine-readable edition of the same public-domain Strong's data
+  than the one already bundled (see the Strong's row above) and will be
+  reconciled — or the existing bundled lexicon kept — in the feature PR that
+  actually emits generated data.
+
 Provenance notes:
 
 - Fixture files are verbatim slices of the upstream XML (elements removed,
