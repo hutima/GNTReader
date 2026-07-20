@@ -24,6 +24,7 @@ One row per configuration axis. Precedence: built-in < config file < env var
 | Pinned upstream revisions | `scripts/generate/revisions.json` | see file | `{sourceKey: {repo, rev, license}}`; `rev` is a full commit SHA, never a branch | active | build-time generators only fetch this pinned SHA (`fetchPinned`); no runtime effect | data | 2026-07-20 |
 | Vocabulary-progress index | `public/progress/{gnt,ot}.json` (+ `ot-N.json` shards if OT exceeds the 400 KB gzip budget) | built by `npm run generate:progress` (`scripts/generate/progress.ts`) | committed generated JSON; `ot.json` is either the full `{meta,books}` index or a `{meta,shards}` manifest — see ADR-0003 | active | zod-validated on fetch (`src/ui/progress.ts`); generator determinism tests (`tests/progress-generator.test.ts`) | data | 2026-07-20 |
 | `generate:wordstudy` | npm script (`scripts/generate/wordstudy.ts`) | run manually before a release/PR that changes it | writes `public/wordstudy/gnt.json` (committed, ~220 KB gzip) | active | `tests/wordstudy-generator.test.ts` (unit logic); zod schema at load time (`src/io/wordstudy.ts`) | data | 2026-07-20 |
+| Visible-chapter `gr:lastRef` debounce | const `LAST_REF_DEBOUNCE_MS` (`src/state/store.ts`) | 500 (ms) | int > 0; flushed immediately on `pagehide` | active | fake-timer unit test | reader | 2026-07-20 |
 
 No runtime env vars and no secrets exist in this app (static PWA; all data
 sources are public). `.env` is unused; if one is ever added, commit a

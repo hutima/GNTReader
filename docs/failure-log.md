@@ -153,3 +153,100 @@ reused; supersede rather than edit destructively. Every investigation over
   value in this dictionary contains the literal substring `/>`.
 - Links: scripts/generate/wordstudy.ts (`fixSelfClosingXml`,
   `buildDerivations`), FL-003.
+
+
+## FL-008 — iPad panel-reflow jump; header/picker didn't follow scroll (2026-07-20)
+
+- Status: fixed (regression guard: browser smoke steps 10a-10d, drift < 6px
+  at 768×1024/834×1112, 5-cycle net drift, rotation, and visible-chapter
+  tracking).
+- Symptom: on 768-834px-wide viewports (iPad mini/Air/Pro portrait), tapping
+  a word to open the desktop side panel flex-shrank the reader column
+  (768→448px), rewrapping every line and jumping the read position by
+  thousands of px (scrollTop +2785px observed at 768×1024). The header
+  title, book/chapter picker, and persisted `gr:lastRef` also only ever
+  reflected the last *navigated* chapter, never the chapter the reader had
+  actually scrolled to during a long continuous-scroll session.
+- Root cause: two independent, previously-conflated concerns. (1) No
+  compensation existed for a WIDTH-triggered reflow — only FL-004's
+  height/prepend anchor existed, which doesn't fire on a pure width change.
+  A `.verse`'s own `getBoundingClientRect()` also under-reports its visual
+  extent in "Both" mode (a token can overflow its ancestor's reported
+  fragment box), so a naive re-anchor on the verse's own rect was wrong;
+  the real extent had to be reconstructed from its tokens' rects. (2)
+  `store.chapter` conflated "last navigated" (must gate the Reader's
+  chapter-window load effect) and "currently visible" (drives header/
+  picker/persisted position) — writing the visible chapter into the same
+  field as navigation would reset the loaded chapter window on every
+  scroll tick.
+- Evidence (real Chromium, `docs/verification/browser-smoke.mjs` steps
+  10a-10d, 2026-07-20): 768×1024, 5 open/close cycles — max per-cycle
+  drift 0.4px, net drift 0.0px after 5 cycles; selecting a 2nd token while
+  the panel stays open — 0.4px drift, chapter window unchanged (3 mounted
+  chapters, same ids before/after); 834×1112 one cycle — 0.0px; rotation
+  768×1024→1024×768 with the panel open — 0.3px; visible-chapter tracking —
+  header switched "John 1"→"John 2" mid-scroll, `gr:lastRef.chapter`
+  followed to 2 (after its 500ms debounce), `#ch-1` stayed mounted (no
+  range reset), scrollTop never jumped back toward the top.
+- Fix/decision: `src/ui/anchor.ts` (new, pure/DOM-free) — width-gated ratio
+  anchor (`captureWidthAnchor`/`widthRestoreDelta`/`widthChanged`) plus
+  `pickVisibleChapter` (viewport-midpoint containment, greatest-intersection
+  fallback). Reader.tsx: a `ResizeObserver` gated strictly on rounded-width
+  change (not just any resize) re-seats the midpoint verse's captured ratio
+  point via `scrollTop +=`, instant, entirely separate ref from FL-004's
+  `anchorRef` (no shared state, no double-fire); an rAF-throttled scroll
+  listener recomputes both the width anchor and the visible chapter
+  continuously. Store gains `visibleChapter` + `setVisibleChapter` (writes
+  ONLY that field; appears in NO data-loading dependency array), a
+  500ms-debounced `gr:lastRef` write (`LAST_REF_DEBOUNCE_MS`, docs/config.md)
+  with a `pagehide` flush so closing the tab never loses the last moment of
+  reading position. `navigate()`/`restorePosition()` set `visibleChapter`
+  synchronously and cancel any pending debounced write. Consumers switched
+  to `visibleChapter`: header title (App.tsx), book/chapter picker's
+  current-book/-chapter highlight (BookPicker.tsx), `backup.ts` lastRef.
+  `chapter` (navigation) is untouched: Reader's load effect, anchorKey/
+  rangeKey, SearchPanel scope, targetVerse click-through.
+- Root cause (refinement 2026-07-20, Opus — intermittent close/rotation drift):
+  the width restore itself was correct, but the anchor's IDENTITY flipped
+  across the reflow. Consecutive `.verse` spans share the line where one ends
+  and the next begins, so their token-union rects overlap by ~a line; at that
+  boundary `document.elementFromPoint(midX, midY)` can hit the NEIGHBOUR verse's
+  token. After the RO re-seated the pre-open verse V at the midpoint, the RO's
+  own tail `captureAll()` — and the `scroll` event fired by its `scrollTop +=`
+  write — re-captured the anchor as the neighbour W (elementFromPoint's pick),
+  with NO real movement. The inverse reflow (panel close) then faithfully
+  restored W, leaving V (the content the user/smoke tracked) one text line off.
+  V and W coincide at the narrow width but separate ~17-35px at the wide width
+  because they rewrap differently, so it surfaced only when the midpoint sat on
+  a verse boundary (short verses / extreme ratios) — hence intermittent and
+  position-dependent (13/40 varied-position cycles at 834×1112; 0/40 when the
+  position was fixed). Evidence: instrumented 834px open/close loop (RO/scroll/
+  scrollTop-write timeline + per-candidate verseVisualRect vs elementFromPoint
+  geometry) in real Chromium; a failing cycle showed pre-open v-2-20@0.19 →
+  post-open re-capture v-2-19@0.858 → close restored v-2-19, smoke drift 17px.
+- Fix/decision (refinement 2026-07-20, Opus): do NOT re-capture the width anchor
+  while the scroller still sits exactly where the app last PROGRAMMATICALLY
+  compensated a layout mutation and no user scroll has moved it since. Reader.tsx
+  records `compensatedScrollTopRef` after the RO width restore's `scrollTop +=`
+  and after the FL-004 prepend/trim write; `captureAll` skips the width-anchor
+  re-capture (pure gate `atCompensatedScroll` in anchor.ts, 0.5px tolerance)
+  while `scroller.scrollTop` still equals it — the RO tail + the compensation's
+  scroll event no longer flip the anchor, so open→close is a verse-stable
+  inverse. Visible-chapter tracking is unaffected (still updates every tick). A
+  genuine user scroll moves scrollTop off the compensated value and re-enables
+  capture, so scrolling with the panel open still re-anchors correctly. This
+  also corrected browser-smoke step 10c: it had re-captured its reference AFTER
+  the panel opened and read ~20px as "the gap between adjacent verses" — that
+  ~20px WAS this flip; the neighbour it grabbed is not the preserved content.
+  10c now captures its reference PRE-open (like 10b), asserting the real
+  invariant (pre-open midpoint content preserved across open AND rotation) and
+  passing at 0.2-0.4px. Invariants preserved: width-gated RO compensation, the
+  separate FL-004 prepend anchorRef, `overflow-anchor:none`, `visibleChapter`
+  out of the load-effect deps, no timeouts/arbitrary scrollTop hacks, drift <6px.
+  Regression guard: repro loop 0/120 across 3×40 varied-position cycles (2 under
+  CPU load), full browser smoke 3× green, `tests/reader-anchor.test.ts`
+  +4 `atCompensatedScroll` cases.
+- Links: src/ui/anchor.ts, src/ui/Reader.tsx, src/state/store.ts,
+  src/ui/BookPicker.tsx, tests/reader-anchor.test.ts,
+  tests/visible-chapter.test.tsx, docs/verification/browser-smoke.mjs
+  (steps 10a-10d), FL-004 (distinct height/prepend anchor, cross-linked).
