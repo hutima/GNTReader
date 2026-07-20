@@ -139,12 +139,32 @@ No PR is opened until its branch passes all gates; owner merges.
   (main checkout) per the design above. Commits locally; lead reviews,
   then independent verification re-run, then Opus adversarial review,
   then push.
-- DONE — groundwork: `feat/generated-data-groundwork` @ 44d1100, pushed,
-  **PR #15 open** (harness fetchPinned/.generate-cache, happy-dom DOM shim
-  over lowfat.ts, sizeReport, tsx@4.23.1 runner, offline smoke + 5 tests;
-  gates re-verified by lead: 18 files / 75 tests green; pinned SHAs
-  re-verified via git ls-remote: macula-hebrew 47db250b…, morphgnt
-  dd6758b8…). PR 2/3 emitters build on this branch.
+- DONE — groundwork **PR #15 MERGED to main** (squash ca8e8fd): generator
+  harness (fetchPinned/.generate-cache, happy-dom shim over lowfat.ts,
+  sizeReport, tsx runner), gates re-verified by lead (18 files/75 tests),
+  pinned SHAs re-verified via git ls-remote. Owner authorized "PR and
+  merge if done" (message 2026-07-20).
+- Sonnet implementer: PR 2 `feat/lexeme-word-study` (worktree, off merged
+  main). Spec: generator reads RAW @gloss (Berean) only — @english inert;
+  identity normalizeStrong (+lemma-fallback map); gloss normalization per
+  decision doc; morphgnt strongsgreek.xml derivation (d/dt/r); output
+  public/wordstudy/gnt.json (meta+strongs+lemmas); DetailPanel async
+  "Word study" section (bars top 6–8 + Other + a11y table, Derived-from
+  links via openStrongs, Hebrew = truthful unavailable); sw.ts
+  isCorpusRequest += /wordstudy/ + CORPUS_CACHE bump same commit;
+  globIgnores; ADR-0002; docs; own smoke docs/verification/
+  wordstudy-smoke.mjs (port 4321).
+- Sonnet implementer: PR 3 `feat/vocabulary-progress` (worktree, off
+  merged main). Spec: generator via lowfat converters + vocab.ts keys
+  (never re-derived); Shape 3 per-book {L,P,c:[[li,pi,n]]} (li=-1 when no
+  lexeme), shards public/progress/gnt.json + ot.json (split OT if >400 KB
+  gzip); src/ui/progress.ts pure coverage (OR-semantics, no double count,
+  0/0 safe); ProgressModal per KnownWordsModal conventions + Settings
+  button beside Known words; live recompute on store change; sw.ts
+  /progress/ + cache bump; docs; own smoke progress-smoke.mjs (port 4322).
+  Known merge conflict PR2↔PR3: sw.ts/CORPUS_CACHE/vite globIgnores/
+  config.md — lead merges PR 2 first, PR 3 rebases (bump becomes v3 if
+  both land).
 
 ## Next literal command
 
