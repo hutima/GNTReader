@@ -168,7 +168,7 @@ describe('buildWordStudy — case grouping', () => {
 });
 
 describe('buildDerivations', () => {
-  it('happy-dom self-closing <tag/> corrupts sibling order without fixSelfClosingXml (FL-008)', () => {
+  it('happy-dom self-closing <tag/> corrupts sibling order without fixSelfClosingXml (FL-007)', () => {
     const broken = `<lexicon><entry strongs="1"><greek unicode="a"/><strongs_derivation>from b</strongs_derivation></entry></lexicon>`;
     // Without the fix, <strongs_derivation> ends up nested inside <greek>,
     // so it is no longer a direct child found by the "entry -> derivation" walk.
