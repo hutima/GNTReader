@@ -4,6 +4,14 @@ Last updated: 2026-07-20. Lead: Fable orchestration session.
 Branch: `claude/ipad-reader-stability-nrdpvf` (currently even with `origin/main`
 except this file). A cold session must be able to resume from here in <5 min.
 
+## OWNER DIRECTIVE (2026-07-20, latest — overrides ordering below)
+
+Focus exclusively on **PR 1** (this branch). PR 2 / PR 3 stay PAUSED on the
+backburner — do NOT respawn their implementers until the owner says
+"continue". When PR 1 is complete and verified: open its PR and merge it
+(owner pre-authorized; likely done in the next session). Groundwork PR #15
+is already merged.
+
 ## Mission
 
 Three independently mergeable changes (owner brief, 2026-07-20):
