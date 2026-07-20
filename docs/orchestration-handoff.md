@@ -12,8 +12,13 @@ via send_later: 05:20 UTC (trig_01CDJGsgMC282zs53uKp7hQc) and backup
 08:20 UTC (trig_0152TG798BvgijvQKN7c4dAA) — the owner said their token
 budget resets at "1:20 AM" (timezone unstated; both US-Eastern and
 US-Pacific interpretations covered). Groundwork PR #15 already merged.
-PR 2/3 implementers were respawned (fresh agents continuing the preserved
-worktrees agent-a6f639edbd138d515 / agent-a12428391d7838de3).
+05:20 UTC reminder fired: all three implementers had died ~04:05 (token
+exhaustion, as owner predicted — no processes, no writes after 04:03).
+Respawned continuation agents at 05:20 for all three: PR 1 in the main
+checkout (substantial WIP found: anchor.ts + reader-anchor.test.ts +
+Reader/store/App/backup edits + browser-smoke additions, smoke was
+mid-iteration/failing), PR 2/3 continuing the preserved worktrees
+agent-a6f639edbd138d515 / agent-a12428391d7838de3.
 
 ## Mission
 
