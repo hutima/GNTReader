@@ -3,7 +3,14 @@ import type { ReadingChapter, ReadingToken } from '@/domain/schema';
 import { bookInfo } from '@/io/books';
 import { loadChapter, prefetchAdjacent } from '@/io/sources';
 import { useAppStore } from '@/state/store';
-import { captureWidthAnchor, clamp01, pickVisibleChapter, widthChanged, widthRestoreDelta } from './anchor';
+import {
+  atCompensatedScroll,
+  captureWidthAnchor,
+  clamp01,
+  pickVisibleChapter,
+  widthChanged,
+  widthRestoreDelta,
+} from './anchor';
 import type { WidthAnchor } from './anchor';
 import { VerseView } from './VerseView';
 import { lexemeKey, parseKey } from './vocab';
@@ -98,6 +105,17 @@ export function Reader() {
    *  width changes (ordinary scrolling/height changes must never trigger a
    *  width compensation). */
   const lastWidthRef = useRef<number | null>(null);
+  /** The scrollTop value the app itself last WROTE while compensating a layout
+   *  mutation (a width reflow's RO restore, or an FL-004 prepend/trim). While
+   *  the scroller still sits exactly there — i.e. no user scroll has moved it
+   *  since — the width anchor must NOT be re-captured (FL-007): consecutive
+   *  `.verse` spans share the line where one ends and the next begins, so their
+   *  token-union rects overlap by ~a line and `elementFromPoint` at the midpoint
+   *  can re-pick the ADJACENT verse. Re-capturing then flips the anchor's
+   *  identity with no real movement, and the inverse reflow (panel close) lands
+   *  one line off. A genuine user scroll changes scrollTop away from this value
+   *  and re-enables capture. */
+  const compensatedScrollTopRef = useRef<number | null>(null);
 
   const book = bookInfo(testament, bookNum);
   const maxChapter = book?.chapters ?? 1;
@@ -152,31 +170,43 @@ export function Reader() {
     const midX = (scrollerRect.left + scrollerRect.right) / 2;
     const midY = viewTop + scroller.clientHeight / 2;
 
-    // `.verse` is an INLINE span that can wrap several lines, so its
-    // getBoundingClientRect() is a union box that routinely overlaps its
-    // neighbours' (a verse ending mid-line and the next starting on that same
-    // line share y-range) — a plain top/bottom containment scan over those
-    // union boxes can therefore miss the verse that's actually rendered at
-    // the midpoint and fall back to one several verses away. Ask the DOM what
-    // is really there first; only fall back to the pure rect scan (still
-    // exercised directly by tests/reader-anchor.test.ts) if that misses, e.g.
-    // the exact pixel lands on inter-line padding that hit-tests to the
-    // `.verses` container rather than a token.
-    const direct = document.elementFromPoint(midX, midY)?.closest<HTMLElement>('.verse');
-    if (direct && scroller.contains(direct)) {
-      const rect = verseVisualRect(direct);
-      const height = rect.bottom - rect.top;
-      widthAnchorRef.current = {
-        id: direct.id,
-        ratio: height > 0 ? clamp01((midY - rect.top) / height) : 0,
-      };
-    } else {
-      const verses: { id: string; top: number; bottom: number }[] = [];
-      scroller.querySelectorAll<HTMLElement>('.verse').forEach((el) => {
-        const r = el.getBoundingClientRect();
-        verses.push({ id: el.id, top: r.top, bottom: r.bottom });
-      });
-      widthAnchorRef.current = captureWidthAnchor(verses, midY, viewTop, viewBottom);
+    // Don't re-capture the width anchor while the scroller still sits exactly
+    // where the app last programmatically compensated a layout mutation and no
+    // user scroll has moved it since (FL-007). The reflow's own tail capture
+    // and the 'scroll' event its scrollTop write fires would otherwise re-pick
+    // a DIFFERENT verse in the shared-line overlap zone (adjacent `.verse`
+    // spans' token-union rects overlap by ~a line, so `elementFromPoint` at the
+    // midpoint can hit the neighbour), flipping the anchor identity with no real
+    // movement so the inverse reflow (panel close) restores the wrong verse and
+    // lands one line off. Visible-chapter tracking below still updates. A real
+    // user scroll changes scrollTop, clearing the guard and resuming capture.
+    if (!atCompensatedScroll(scroller.scrollTop, compensatedScrollTopRef.current)) {
+      // `.verse` is an INLINE span that can wrap several lines, so its
+      // getBoundingClientRect() is a union box that routinely overlaps its
+      // neighbours' (a verse ending mid-line and the next starting on that same
+      // line share y-range) — a plain top/bottom containment scan over those
+      // union boxes can therefore miss the verse that's actually rendered at
+      // the midpoint and fall back to one several verses away. Ask the DOM what
+      // is really there first; only fall back to the pure rect scan (still
+      // exercised directly by tests/reader-anchor.test.ts) if that misses, e.g.
+      // the exact pixel lands on inter-line padding that hit-tests to the
+      // `.verses` container rather than a token.
+      const direct = document.elementFromPoint(midX, midY)?.closest<HTMLElement>('.verse');
+      if (direct && scroller.contains(direct)) {
+        const rect = verseVisualRect(direct);
+        const height = rect.bottom - rect.top;
+        widthAnchorRef.current = {
+          id: direct.id,
+          ratio: height > 0 ? clamp01((midY - rect.top) / height) : 0,
+        };
+      } else {
+        const verses: { id: string; top: number; bottom: number }[] = [];
+        scroller.querySelectorAll<HTMLElement>('.verse').forEach((el) => {
+          const r = el.getBoundingClientRect();
+          verses.push({ id: el.id, top: r.top, bottom: r.bottom });
+        });
+        widthAnchorRef.current = captureWidthAnchor(verses, midY, viewTop, viewBottom);
+      }
     }
 
     const articles = [...articleRefs.current.entries()].map(([chapterNum, el]) => {
@@ -265,6 +295,10 @@ export function Reader() {
       if (el) {
         const newTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
         scroller.scrollTop += newTop - anchor.top;
+        // Same-content compensation (FL-004 prepend/trim): keep the width anchor
+        // stable across it, don't let the tail capture re-pick a neighbour verse
+        // (FL-007). A later user scroll clears this guard.
+        compensatedScrollTopRef.current = scroller.scrollTop;
       }
       anchorRef.current = null;
     }
@@ -351,6 +385,10 @@ export function Reader() {
           const scrollerRect = scroller.getBoundingClientRect();
           const delta = widthRestoreDelta(rect, anchor.ratio, scrollerRect.top, scroller.clientHeight);
           scroller.scrollTop += delta;
+          // Mark this as an app-driven position so the tail capture below (and
+          // the 'scroll' event this write fires) don't flip the anchor to an
+          // adjacent verse in the shared-line overlap zone (FL-007).
+          compensatedScrollTopRef.current = scroller.scrollTop;
         }
       }
       captureAll();

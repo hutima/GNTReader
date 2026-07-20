@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  atCompensatedScroll,
   captureWidthAnchor,
   clamp01,
   pickVisibleChapter,
@@ -113,6 +114,28 @@ describe('widthChanged (width gate)', () => {
 
   it('is true for a changed width (panel open/close reflow)', () => {
     expect(widthChanged(768, 448)).toBe(true);
+  });
+});
+
+describe('atCompensatedScroll (capture-invalidation gate)', () => {
+  it('is false when nothing has been compensated yet (first load)', () => {
+    expect(atCompensatedScroll(1234, null)).toBe(false);
+  });
+
+  it('suppresses capture while sitting exactly at the compensated position', () => {
+    // The width-reflow restore (and the scroll event its write fires) land here;
+    // re-capturing would flip the anchor to a shared-line neighbour (FL-007).
+    expect(atCompensatedScroll(5000, 5000)).toBe(true);
+  });
+
+  it('tolerates sub-pixel quantisation at the compensated position', () => {
+    expect(atCompensatedScroll(5000.3, 5000)).toBe(true);
+    expect(atCompensatedScroll(4999.7, 5000)).toBe(true);
+  });
+
+  it('re-enables capture once a real user scroll moves off the compensated position', () => {
+    expect(atCompensatedScroll(5001, 5000)).toBe(false);
+    expect(atCompensatedScroll(4980, 5000)).toBe(false);
   });
 });
 

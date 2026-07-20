@@ -134,3 +134,21 @@ export function widthRestoreDelta(
 export function widthChanged(prevWidth: number, nextWidth: number): boolean {
   return Math.round(prevWidth) !== Math.round(nextWidth);
 }
+
+/**
+ * Capture-invalidation gate (FL-007): true while the scroller still sits
+ * exactly where the app last *programmatically* compensated a layout mutation
+ * (a width-reflow restore, or an FL-004 prepend/trim) and no user scroll has
+ * moved it since. While true the width anchor must NOT be re-captured: adjacent
+ * `.verse` spans share the line where one ends and the next begins, so their
+ * token-union rects overlap by ~a line and `elementFromPoint` at the midpoint
+ * can re-pick the NEIGHBOUR verse — flipping the anchor's identity with no real
+ * movement, so the inverse reflow (panel close) restores the wrong verse and
+ * lands one text line off. A genuine user scroll changes scrollTop off the
+ * compensated value, clearing the gate and resuming capture. `null` (nothing
+ * compensated yet, e.g. first load) never suppresses. The 0.5px tolerance
+ * absorbs sub-pixel scroll quantisation without masking a real user scroll.
+ */
+export function atCompensatedScroll(current: number, compensated: number | null): boolean {
+  return compensated != null && Math.abs(current - compensated) < 0.5;
+}

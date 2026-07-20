@@ -451,6 +451,24 @@ try {
     await dismissTutorialIfPresent(p);
     await scrollUntilChapters(p, 2);
 
+    // Capture the reference verse BEFORE opening the panel. FL-007's contract
+    // is that the content under the viewport midpoint is preserved across a
+    // width reflow, so the SAME pre-open content must stay put through BOTH the
+    // panel open AND the subsequent rotation — the app anchors on it and does
+    // not migrate to a neighbour while the position is unchanged.
+    //
+    // An earlier revision re-anchored AFTER the panel settled and measured ~20px
+    // of "drift" against a pre-open reference, attributing it to "the gap between
+    // two adjacent verses". That gap WAS the FL-007 anchor-flip bug (see
+    // failure-log FL-007): consecutive `.verse` spans share the line where one
+    // ends and the next begins, so `elementFromPoint` at the midpoint could
+    // re-pick the NEIGHBOUR verse after the reflow, and the post-open re-anchor
+    // tracked that neighbour instead of the content the app actually preserves.
+    // With the flip fixed, the pre-open reference is re-seated to sub-pixel
+    // across the rotation; a post-open re-anchor would now (correctly) show the
+    // ~one-line gap to the neighbour it wrongly grabbed.
+    const anchor = await verseAnchorState(p);
+    if (!anchor) throw new Error('no verse under the viewport midpoint');
     const mid = await readerMidpoint(p);
     const tapTokenId = await tagNearestToken(p, mid.x, mid.y);
     if (!tapTokenId) throw new Error('no token near midpoint to tap');
@@ -458,18 +476,6 @@ try {
     await p.locator(`[data-smoke-id="${tapTokenId}"]`).tap();
     await detail.waitFor({ timeout: 5000 });
     await waitForSettle(p);
-    // Re-anchor AFTER the panel has settled, mirroring what the app's own
-    // widthAnchorRef holds at this point: it re-captures "whatever verse is
-    // at the midpoint now" after every settle, so a SECOND, independent
-    // transition (the rotation) is entitled to re-centre on a neighbouring
-    // verse rather than the exact one an anchor grabbed before the panel
-    // even opened. Comparing against that pre-open reference here measured
-    // ~20px of "drift" that was really just the (correct) gap between two
-    // adjacent verses — not a compensation error (verified: comparing
-    // against a freshly re-captured anchor at this same point in real
-    // Chromium showed sub-pixel drift for the rotation itself).
-    const anchor = await verseAnchorState(p);
-    if (!anchor) throw new Error('no verse under the viewport midpoint');
 
     await p.setViewportSize({ width: 1024, height: 768 });
     await waitForSettle(p);
