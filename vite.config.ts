@@ -51,7 +51,7 @@ export default defineConfig({
         // App shell only. Corpus XML, fixtures, and lexicon JSON are runtime
         // cached (never precached) — ADR-0001 invariant 4.
         globPatterns: ['**/*.{js,css,html,svg,woff,woff2}', 'icons/*.png'],
-        globIgnores: ['fixtures/**', 'lexicon/**', 'progress/**'],
+        globIgnores: ['fixtures/**', 'lexicon/**', 'progress/**', 'wordstudy/**'],
       },
       devOptions: {
         enabled: false,
