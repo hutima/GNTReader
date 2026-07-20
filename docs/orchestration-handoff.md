@@ -139,10 +139,12 @@ No PR is opened until its branch passes all gates; owner merges.
   (main checkout) per the design above. Commits locally; lead reviews,
   then independent verification re-run, then Opus adversarial review,
   then push.
-- Sonnet implementer: groundwork on `feat/generated-data-groundwork`
-  (isolated git worktree, based on origin/main): scripts/generate/
-  harness (fetchPinned → .generate-cache → lowfat.ts under happy-dom shim),
-  revisions.json pinned SHAs, size report, offline smoke + tests.
+- DONE — groundwork: `feat/generated-data-groundwork` @ 44d1100, pushed,
+  **PR #15 open** (harness fetchPinned/.generate-cache, happy-dom DOM shim
+  over lowfat.ts, sizeReport, tsx@4.23.1 runner, offline smoke + 5 tests;
+  gates re-verified by lead: 18 files / 75 tests green; pinned SHAs
+  re-verified via git ls-remote: macula-hebrew 47db250b…, morphgnt
+  dd6758b8…). PR 2/3 emitters build on this branch.
 
 ## Next literal command
 
