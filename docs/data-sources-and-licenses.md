@@ -13,12 +13,16 @@ is included, and none may be added except BSB or ASV (see ADR-0001).
 | Gentium Book Plus (scripture face — Greek) | SIL International, via the `@fontsource/gentium-book-plus` package | SIL Open Font License 1.1 (`src/fonts/Gentium-Book-Plus-OFL.txt`) | Vendored woff2 (greek + greek-ext subsets, weights 400/700) in `src/fonts/`; scripture text and the logo Α/Ω |
 | Source Sans 3 / Source Sans Pro (UI face) | Adobe / SIL, via the `@fontsource/source-sans-3` package | SIL Open Font License 1.1 (`src/fonts/Source-Sans-3-OFL.txt`) | Vendored woff2 (latin + latin-ext subsets, weights 400/600/700) in `src/fonts/`; all non-scripture UI text |
 
-## Generated data (upcoming)
+## Generated data
 
-No generated data ships yet. A build-time generator harness
-(`scripts/generate/harness.ts`) exists so future features (e.g. a word-study
-index, a vocabulary-progress index) can be built from pinned upstream
-revisions rather than the runtime-fetched files above:
+| Data | Source | License | How used |
+| --- | --- | --- | --- |
+| Vocabulary-progress index (`public/progress/{gnt,ot}.json`, + `ot-N.json` shards if sharded) | Built by `npm run generate:progress` (`scripts/generate/progress.ts`) from the same pinned `macula-greek`/`macula-hebrew` revisions above | CC BY 4.0 — the `L`/`P` arrays contain lemmas and parse signatures (source-derived text), not just counts, so this generated file carries the same MACULA provenance as the corpus rows above, even though no running scripture text is shipped | Fetched on demand by the Settings → "Vocabulary progress" modal (`src/ui/ProgressModal.tsx`); never precached, runtime-cached like other corpus data (`src/sw.ts`); see ADR-0003 |
+
+A build-time generator harness (`scripts/generate/harness.ts`) exists so
+generated features (the vocabulary-progress index above; a future word-study
+index) can be built from pinned upstream revisions rather than the
+runtime-fetched files above:
 
 - Pinned revisions (repo + commit SHA + license) live in
   `scripts/generate/revisions.json`; generators only ever fetch that exact

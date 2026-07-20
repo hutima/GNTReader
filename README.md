@@ -3,8 +3,9 @@
 A reading-focused Progressive Web App for the Greek New Testament (SBLGNT,
 MACULA Lowfat) and Hebrew Old Testament (WLC, MACULA Lowfat): tap any word
 for lemma, transliteration, gloss, parsing, and Strong's number; search by
-morphology or Strong's; read offline. No diagramming, no translation text —
-gloss mode is built from token-level source data.
+morphology or Strong's; track vocabulary-learning progress per book; read
+offline. No diagramming, no translation text — gloss mode is built from
+token-level source data.
 
 ## Quickstart
 
