@@ -8,7 +8,7 @@ import { clearMemoryCache } from '@/io/sources';
 import { LAST_REF_DEBOUNCE_MS, useAppStore } from '@/state/store';
 
 /**
- * FL-006: `visibleChapter` tracks where the reader is actually scrolled to,
+ * FL-007: `visibleChapter` tracks where the reader is actually scrolled to,
  * independent of the last *navigated* `chapter`. It must never feed back into
  * navigation (no reload, no Reader-load-effect re-run), only into the header
  * title / picker highlight / persisted position — see src/ui/anchor.ts and
@@ -56,7 +56,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('visibleChapter (FL-006)', () => {
+describe('visibleChapter (FL-007)', () => {
   it('navigate() sets both chapter and visibleChapter', () => {
     act(() => {
       useAppStore.getState().navigate('gnt', 5, 3);

@@ -34,7 +34,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const context = await browser.newContext({ viewport: { width: 1200, height: 800 } });
 const page = await context.newPage();
 
-// --- FL-006 helpers (iPad panel-reflow jump + visible-chapter tracking) ---
+// --- FL-007 helpers (iPad panel-reflow jump + visible-chapter tracking) ---
 
 /** Scroll the reader down in small steps until at least `minCount` <article
  *  class="chapter"> elements are mounted (or give up after `maxSteps`). */
@@ -59,7 +59,7 @@ async function scrollUntilChapters(p, minCount, maxSteps = 40) {
  * design) push a sentinel into its 600px trigger margin, firing an
  * IntersectionObserver-driven `extend()` fetch+append some hundreds of ms
  * later, whose own FL-004 anchor-compensation only settles once it lands.
- * Measuring drift before that settles would blame FL-006 for FL-004/network
+ * Measuring drift before that settles would blame FL-007 for FL-004/network
  * timing that has nothing to do with the width-anchor math.
  */
 async function waitForSettle(p, quietMs = 250, timeoutMs = 4000) {
@@ -89,7 +89,7 @@ async function waitForSettle(p, quietMs = 250, timeoutMs = 4000) {
  * `verseVisualRect`) to measure drift the way the FEATURE actually defines
  * it: NOT "did this verse's (or token's) raw pixel position stay the same"
  * — a verse's own height legitimately grows 130-150% across the reflow
- * (FL-006), and even a single token's exact line placement can shift a few
+ * (FL-007), and even a single token's exact line placement can shift a few
  * px as the surrounding line re-wraps — but "does the fractional point that
  * was at the viewport midpoint land back on the (possibly new) midpoint".
  * `verseId`, when passed, re-uses that verse instead of re-detecting one
@@ -309,7 +309,7 @@ try {
   ok(`offline reload: app shell + last chapter render (offline badge: ${offlineBadge})`);
   await context.setOffline(false);
 
-  // 10a. FL-006 width-anchor: 768×1024 (iPad mini portrait) — the desktop
+  // 10a. FL-007 width-anchor: 768×1024 (iPad mini portrait) — the desktop
   // side panel (not the mobile sheet: useIsMobile's breakpoint is 767px)
   // flex-shrinks the reader column when it opens, rewrapping every line and
   // growing every verse's own height 130-151%. "Drift" is measured the way
@@ -404,7 +404,7 @@ try {
     await ctx.close();
   }
 
-  // 10b. FL-006 width-anchor at 834×1112 (iPad Air/Pro portrait): one cycle.
+  // 10b. FL-007 width-anchor at 834×1112 (iPad Air/Pro portrait): one cycle.
   {
     const ctx = await browser.newContext({
       viewport: { width: 834, height: 1112 },
@@ -437,7 +437,7 @@ try {
     await ctx.close();
   }
 
-  // 10c. FL-006 width-anchor under rotation: 768×1024 → 1024×768 with the
+  // 10c. FL-007 width-anchor under rotation: 768×1024 → 1024×768 with the
   // panel already open (page.setViewportSize simulates the iPad rotating).
   {
     const ctx = await browser.newContext({
@@ -480,7 +480,7 @@ try {
     await ctx.close();
   }
 
-  // 10d. Visible-chapter tracking (FL-006): scroll slowly from John 1 into
+  // 10d. Visible-chapter tracking (FL-007): scroll slowly from John 1 into
   // John 2 and confirm the header follows the SCROLLED position (not the
   // last-navigated chapter), the persisted ref updates after its debounce,
   // the previously-mounted John 1 stays in the DOM (no range reset), and the

@@ -28,7 +28,7 @@ const MAX_LOADED = WINDOW_RADIUS * 2 + 1; // visible chapter ± 2 → at most 5
  * overflow being reflected in the ANCESTOR span's reported fragment rects
  * (verified in a real Chromium: a verse's bbox ended 20px above a directly
  * nested token's own bbox). Reconstruct the real extent as the union of its
- * tokens' rects instead, so the width-anchor ratio (FL-006) is computed
+ * tokens' rects instead, so the width-anchor ratio (FL-007) is computed
  * against what's actually on screen.
  */
 function verseVisualRect(verseEl: HTMLElement): { top: number; bottom: number } {
@@ -90,7 +90,7 @@ export function Reader() {
   const articleRefs = useRef(new Map<number, HTMLElement>());
   /** Anchor captured before a range mutation; consumed by the layout effect. */
   const anchorRef = useRef<{ chapter: number; top: number } | null>(null);
-  /** Width-reflow ratio anchor (FL-006) — orthogonal to `anchorRef` above:
+  /** Width-reflow ratio anchor (FL-007) — orthogonal to `anchorRef` above:
    *  that one tracks height changes from prepend/trim, this one tracks width
    *  changes from the desktop side panel opening/closing. */
   const widthAnchorRef = useRef<WidthAnchor | null>(null);
@@ -120,7 +120,7 @@ export function Reader() {
   }, []);
 
   /**
-   * Recompute both FL-006 mechanisms from the currently-committed layout:
+   * Recompute both FL-007 mechanisms from the currently-committed layout:
    * the width-reflow ratio anchor (the `.verse` at the viewport midpoint,
    * and how far through its height that midpoint falls) and the visible
    * chapter (for the header title, picker highlight, and persisted position
@@ -301,7 +301,7 @@ export function Reader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extend, rangeKey]);
 
-  // rAF-throttled scroll tracking (FL-006): recompute the width anchor and
+  // rAF-throttled scroll tracking (FL-007): recompute the width anchor and
   // the visible chapter as the reader scrolls. Bound once per scroller mount
   // — `captureAll` is stable (reads refs/getState only), so this never needs
   // to rebind across range changes.
@@ -321,7 +321,7 @@ export function Reader() {
     return () => scroller.removeEventListener('scroll', onScroll);
   }, [captureAll]);
 
-  // Width-gated reflow compensation (FL-006): opening/closing the desktop
+  // Width-gated reflow compensation (FL-007): opening/closing the desktop
   // side panel at 768–834px flex-shrinks the reader column, rewrapping every
   // line and shifting scrollHeight by 130-151% — a plain height change (new
   // chapter loaded) must NOT trigger this, only an actual width change.
@@ -380,7 +380,7 @@ export function Reader() {
   // Deferred TWO frames: on desktop, selecting a token can ALSO mount the
   // side panel in the same commit, which flex-shrinks the reader and
   // triggers the width-anchor's own ResizeObserver-driven scrollTop
-  // compensation (FL-006, above). A React passive effect is not guaranteed
+  // compensation (FL-007, above). A React passive effect is not guaranteed
   // to run after that RO callback — measured in real Chromium, a single
   // requestAnimationFrame deferral still ran BEFORE the RO's notification
   // for the very same resize (RO fired ~0.1ms after that rAF, i.e. later in

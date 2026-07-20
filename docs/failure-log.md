@@ -92,7 +92,44 @@ reused; supersede rather than edit destructively. Every investigation over
   resolves to `/GNTReader/sw.js`, manifest start_url/scope/icons relative.
 - Links: .github/workflows/deploy.yml, vite.config.ts (base './'), FL-002.
 
-## FL-006 — iPad panel-reflow jump; header/picker didn't follow scroll (2026-07-20)
+## FL-006 — `generate:progress` OOMs partway through the GNT corpus (2026-07-20)
+
+- Status: fixed (regression guard: the generator now completes the full
+  27-book GNT + 39-book/929-chapter OT corpus without crashing; see PR 3
+  `feat/vocabulary-progress` run logs).
+- Symptom: `npm run generate:progress` crashed with `FATAL ERROR: Reached
+  heap limit Allocation failed - JavaScript heap out of memory` after ~18 of
+  27 GNT books, heap already at ~8 GB (V8's default limit on this machine).
+- Root cause: `scripts/generate/harness.ts`'s `installDomShim()` creates ONE
+  happy-dom `Window` for the whole generator run, and every book/chapter is
+  parsed with a fresh `new DOMParser().parseFromString()` against that same
+  shared window. happy-dom retains internal per-`Document` bookkeeping for
+  the life of the owning `Window` and never releases it, so heap usage grew
+  monotonically with cumulative tokens parsed (~70 KB retained per token)
+  regardless of book size, and was NOT reclaimed by an explicit `global.gc()`
+  — the references were genuinely still reachable via the shared window, not
+  merely uncollected garbage.
+- Evidence: isolated repro parsing only the (already-cached) GNT XML files in
+  a loop — heap grew Matthew 1.29 GB → Mark 2.07 GB → Luke 3.42 GB → ... →
+  Galatians 7.16 GB, unbounded, with `sleep(50)` + forced `gc()` between
+  books making no difference (ruling out event-loop starvation). Switching to
+  a FRESH `Window` per book, closed via `win.happyDOM.close()` immediately
+  after parsing, kept heap usage bounded per-book instead (RSS plateaued
+  ~5.1 GB across all 19 cached books; heap dropped back down after each
+  `close()`, no monotonic growth).
+- Fix/decision: added `installFreshDomShim()` (returns the `Window`) and
+  `closeDomShim(win)` to the harness; `scripts/generate/progress.ts` now
+  opens+closes a window per GNT book and per OT chapter file (not once for
+  the whole run). `installDomShim()` (single shared shim, no close) is kept
+  as-is for one-shot generators (`smoke.ts`) and tests, where the corpus is
+  small enough that the leak never surfaces. `npm run generate:progress` now
+  launches with `node --expose-gc --import tsx ...` so the harness's
+  `maybeGc()` can force a collection after each close (belt-and-suspenders;
+  the window close is what actually severs the references).
+- Links: scripts/generate/harness.ts (`installFreshDomShim`, `closeDomShim`,
+  `maybeGc`), scripts/generate/progress.ts (`buildGntBooks`, `buildOtBooks`).
+
+## FL-007 — iPad panel-reflow jump; header/picker didn't follow scroll (2026-07-20)
 
 - Status: fixed (regression guard: browser smoke steps 10a-10d, drift < 6px
   at 768×1024/834×1112, 5-cycle net drift, rotation, and visible-chapter

@@ -8,7 +8,7 @@ import {
 } from '@/ui/anchor';
 
 /**
- * Pure-logic coverage for FL-006 (iPad panel-reflow jump + visible-chapter
+ * Pure-logic coverage for FL-007 (iPad panel-reflow jump + visible-chapter
  * tracking). All inputs are plain rects/numbers — no DOM required, so these
  * run identically in happy-dom and a real browser.
  */

@@ -29,6 +29,10 @@ describe('PWA config invariants', () => {
     expect(viteConfig).toMatch(/globIgnores:.*fixtures.*lexicon|globIgnores:.*lexicon.*fixtures/s);
   });
 
+  it('never precaches the generated vocabulary-progress index', () => {
+    expect(viteConfig).toContain("'progress/**'");
+  });
+
   it('runtime corpus cache name is versioned (docs/config.md)', () => {
     expect(swSource).toMatch(/CORPUS_CACHE = 'corpus-v\d+'/);
   });
@@ -61,6 +65,7 @@ describe('build output invariants (skipped when dist/ absent)', () => {
     for (const { url } of entries) {
       expect(url).not.toMatch(/^fixtures\//);
       expect(url).not.toMatch(/^lexicon\//);
+      expect(url).not.toMatch(/^progress\//);
       expect(url).not.toMatch(/\.xml$/);
       expect(url).not.toMatch(/^\//); // absolute-root would break Pages subpath
     }

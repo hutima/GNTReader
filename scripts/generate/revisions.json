@@ -1,0 +1,17 @@
+{
+  "macula-greek": {
+    "repo": "Clear-Bible/macula-greek",
+    "rev": "8423afe47b9e8f24b7772e808af45c7159a6fe7e",
+    "license": "CC BY 4.0 (SBLGNT text CC BY 4.0; @gloss = Berean Interlinear, public domain 2023-04-30; @english = Cherith, CC BY 4.0)"
+  },
+  "macula-hebrew": {
+    "repo": "Clear-Bible/macula-hebrew",
+    "rev": "47db250bd55d0d8577f2a94fba114ef16c35b23c",
+    "license": "CC BY 4.0 (WLC public domain)"
+  },
+  "morphgnt-strongs": {
+    "repo": "morphgnt/strongs-dictionary-xml",
+    "rev": "dd6758b82f46b620804a8ea677d715844679eea1",
+    "license": "CC0 (public-domain waiver)"
+  }
+}
