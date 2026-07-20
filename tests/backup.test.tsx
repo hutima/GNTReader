@@ -193,7 +193,7 @@ describe('applyBackup', () => {
 });
 
 describe('settings sheet: Backup section', () => {
-  it('renders as the last section, with export and import buttons', async () => {
+  it('renders before Install app?/About, with export and import buttons', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -203,7 +203,14 @@ describe('settings sheet: Backup section', () => {
     const headings = within(dialog)
       .getAllByRole('heading', { level: 3 })
       .map((h) => h.textContent);
-    expect(headings[headings.length - 1]).toBe('Backup');
+    // Backup is followed only by the conditional "Install app" section and
+    // the final "About" section — nothing else comes after it.
+    const backupIndex = headings.indexOf('Backup');
+    expect(backupIndex).toBeGreaterThan(-1);
+    expect(headings.slice(backupIndex + 1).every((h) => h === 'Install app' || h === 'About')).toBe(
+      true,
+    );
+    expect(headings[headings.length - 1]).toBe('About');
 
     expect(within(dialog).getByRole('button', { name: 'Export backup' })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Import backup' })).toBeInTheDocument();

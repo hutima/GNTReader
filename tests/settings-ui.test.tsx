@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe('settings sheet', () => {
-  it('renders "About the author" first, before Appearance, with correct external links', async () => {
+  it('renders "How to use" first, and an "About the author" button in the last (About) section', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -32,8 +32,32 @@ describe('settings sheet', () => {
     const headings = within(dialog)
       .getAllByRole('heading', { level: 3 })
       .map((h) => h.textContent);
-    expect(headings[0]).toBe('About the author');
-    expect(headings.indexOf('About the author')).toBeLessThan(headings.indexOf('Appearance'));
+    expect(headings[0]).toBe('How to use');
+    expect(headings[headings.length - 1]).toBe('About');
+    expect(headings.indexOf('How to use')).toBeLessThan(headings.indexOf('Appearance'));
+
+    // The bio/link content is not present until the About modal is opened.
+    expect(within(dialog).queryByText(/Wycliffe College/)).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('link', { name: 'definedfaith.wordpress.com' }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      within(dialog).getByRole('button', { name: 'About the author' }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens the About the author modal with correct external links, and dismisses it', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const settingsDialog = await screen.findByRole('dialog', { name: 'Settings' });
+    await user.click(
+      within(settingsDialog).getByRole('button', { name: 'About the author' }),
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: 'About the author' });
 
     const blog = within(dialog).getByRole('link', { name: 'definedfaith.wordpress.com' });
     expect(blog).toHaveAttribute('href', 'https://definedfaith.wordpress.com/');
@@ -63,6 +87,30 @@ describe('settings sheet', () => {
     expect(dialog).toHaveTextContent('@hutima');
     // The links list must not point back at GNT Reader itself.
     expect(within(dialog).queryByText(/GNT Reader/i, { selector: 'a' })).not.toBeInTheDocument();
+
+    // Close button dismisses it.
+    await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'About the author' })).not.toBeInTheDocument();
+  });
+
+  it('dismisses the About the author modal on backdrop click', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const settingsDialog = await screen.findByRole('dialog', { name: 'Settings' });
+    await user.click(
+      within(settingsDialog).getByRole('button', { name: 'About the author' }),
+    );
+    await screen.findByRole('dialog', { name: 'About the author' });
+
+    // Only the About modal renders a `.modal-backdrop` at this point (the
+    // Settings sheet itself uses `.sheet-backdrop`).
+    const backdrop = container.querySelector('.modal-backdrop');
+    expect(backdrop).toBeTruthy();
+    await user.click(backdrop as Element);
+
+    expect(screen.queryByRole('dialog', { name: 'About the author' })).not.toBeInTheDocument();
   });
 
   it('opens from the header and applies theme + reading-size overrides', async () => {
