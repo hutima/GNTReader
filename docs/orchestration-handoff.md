@@ -20,6 +20,18 @@ Reader/store/App/backup edits + browser-smoke additions, smoke was
 mid-iteration/failing), PR 2/3 continuing the preserved worktrees
 agent-a6f639edbd138d515 / agent-a12428391d7838de3.
 
+STATUS 06:0x UTC: **PR 3 MERGED — PR #16** (squash 53497a2; verified by
+lead: 113/113 tests, precache excludes progress/**, John totals cross-match
+Scout D, browser smoke 8/8; sizes gnt.json 421.7 KB gzip [over estimate,
+flagged + accepted, lazy-only], OT 3 shards ~266-272 KB gzip each behind
+ot.json manifest; CORPUS_CACHE now corpus-v2; failure-log now has FL-006 =
+generator happy-dom OOM, fixed via installFreshDomShim in harness).
+CONSEQUENCES for in-flight PRs: PR 2 must rebase onto main and bump
+CORPUS_CACHE to corpus-v3 (its agent was messaged the full conflict list);
+PR 1's failure-log entry must be renumbered FL-006→FL-007 at/before merge
+(failure-log.md will conflict — resolve by appending after FL-006).
+PR 1 + PR 2 agents still running.
+
 ## Mission
 
 Three independently mergeable changes (owner brief, 2026-07-20):
