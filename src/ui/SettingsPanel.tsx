@@ -12,6 +12,7 @@ import {
 } from '@/state/store';
 import { useSheetDrag } from './useSheetDrag';
 import { KnownWordsModal } from './KnownWordsModal';
+import { ProgressModal } from './ProgressModal';
 import { AboutModal } from './AboutModal';
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
@@ -55,6 +56,7 @@ export function SettingsPanel() {
   const resetKnown = useAppStore((s) => s.resetKnown);
   const knownCount = useAppStore((s) => s.knownLexemes.size + s.knownParses.size);
   const [showKnown, setShowKnown] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const { status, updateAvailable, checkForUpdate, clearCachesAndReload } = usePwa();
   const { canInstall, isStandalone, isIos, promptInstall } = useInstallPrompt();
@@ -308,6 +310,9 @@ export function SettingsPanel() {
               >
                 Known words{knownCount > 0 ? ` (${knownCount})` : ''}
               </button>
+              <button type="button" className="mini" onClick={() => setShowProgress(true)}>
+                Vocabulary progress
+              </button>
               <button
                 type="button"
                 className="mini reject"
@@ -455,6 +460,7 @@ export function SettingsPanel() {
       </section>
       </div>
       {showKnown && <KnownWordsModal onClose={() => setShowKnown(false)} />}
+      {showProgress && <ProgressModal onClose={() => setShowProgress(false)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </>
   );

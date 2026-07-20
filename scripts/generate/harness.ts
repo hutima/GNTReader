@@ -100,6 +100,46 @@ export function installDomShim(): void {
   g.Document = win.Document;
 }
 
+/**
+ * Like `installDomShim`, but returns the happy-dom `Window` so the caller can
+ * close it after use — see `closeDomShim`. One long-lived happy-dom `Window`
+ * shared across MANY `DOMParser().parseFromString()` calls leaks memory
+ * without bound (observed: parsing the 27-book GNT corpus against a single
+ * shared window OOM'd a ~8.6 GB heap partway through; per-book heap usage
+ * grew monotonically, ~70 KB retained per token, never released even with a
+ * forced GC). happy-dom keeps internal bookkeeping for every `Document` it
+ * creates alive for the life of the owning `Window`; the fix is to give each
+ * unit of work (one GNT book; one OT chapter) its OWN window and close it
+ * immediately after, which lets that memory become collectible. Any
+ * generator processing more than a handful of files (`scripts/generate/
+ * progress.ts`) MUST use this instead of the shared `installDomShim`.
+ */
+export function installFreshDomShim(): Window {
+  const win = new Window();
+  const g = globalThis as unknown as Record<string, unknown>;
+  g.DOMParser = win.DOMParser;
+  g.Node = win.Node;
+  g.Element = win.Element;
+  g.Document = win.Document;
+  return win;
+}
+
+/**
+ * Releases a happy-dom `Window` created by `installFreshDomShim`. Must be
+ * called after the synchronous parse/convert work that used its globals is
+ * done (safe to `await` after that point — no other caller can observe this
+ * window's globals once its own synchronous parse section has finished).
+ */
+export async function closeDomShim(win: Window): Promise<void> {
+  await win.happyDOM.close();
+}
+
+/** Runs GC if the process was launched with `--expose-gc` (a no-op otherwise). */
+export function maybeGc(): void {
+  const g = globalThis as unknown as { gc?: () => void };
+  g.gc?.();
+}
+
 /** Raw + gzip(-9) byte size of one file on disk. */
 export interface SizeRow {
   path: string;

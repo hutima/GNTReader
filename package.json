@@ -18,7 +18,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc -b --noEmit",
     "icons": "node scripts/generate-icons.mjs",
-    "generate:smoke": "tsx scripts/generate/smoke.ts"
+    "generate:smoke": "tsx scripts/generate/smoke.ts",
+    "generate:progress": "node --expose-gc --import tsx scripts/generate/progress.ts"
   },
   "dependencies": {
     "idb": "^8.0.0",
