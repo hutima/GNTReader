@@ -91,3 +91,59 @@ reused; supersede rather than edit destructively. Every investigation over
   Build output verified subpath-safe: relative assets, `register("./sw.js")`
   resolves to `/GNTReader/sw.js`, manifest start_url/scope/icons relative.
 - Links: .github/workflows/deploy.yml, vite.config.ts (base './'), FL-002.
+
+## FL-006 — iPad panel-reflow jump; header/picker didn't follow scroll (2026-07-20)
+
+- Status: fixed (regression guard: browser smoke steps 10a-10d, drift < 6px
+  at 768×1024/834×1112, 5-cycle net drift, rotation, and visible-chapter
+  tracking).
+- Symptom: on 768-834px-wide viewports (iPad mini/Air/Pro portrait), tapping
+  a word to open the desktop side panel flex-shrank the reader column
+  (768→448px), rewrapping every line and jumping the read position by
+  thousands of px (scrollTop +2785px observed at 768×1024). The header
+  title, book/chapter picker, and persisted `gr:lastRef` also only ever
+  reflected the last *navigated* chapter, never the chapter the reader had
+  actually scrolled to during a long continuous-scroll session.
+- Root cause: two independent, previously-conflated concerns. (1) No
+  compensation existed for a WIDTH-triggered reflow — only FL-004's
+  height/prepend anchor existed, which doesn't fire on a pure width change.
+  A `.verse`'s own `getBoundingClientRect()` also under-reports its visual
+  extent in "Both" mode (a token can overflow its ancestor's reported
+  fragment box), so a naive re-anchor on the verse's own rect was wrong;
+  the real extent had to be reconstructed from its tokens' rects. (2)
+  `store.chapter` conflated "last navigated" (must gate the Reader's
+  chapter-window load effect) and "currently visible" (drives header/
+  picker/persisted position) — writing the visible chapter into the same
+  field as navigation would reset the loaded chapter window on every
+  scroll tick.
+- Evidence (real Chromium, `docs/verification/browser-smoke.mjs` steps
+  10a-10d, 2026-07-20): 768×1024, 5 open/close cycles — max per-cycle
+  drift 0.4px, net drift 0.0px after 5 cycles; selecting a 2nd token while
+  the panel stays open — 0.4px drift, chapter window unchanged (3 mounted
+  chapters, same ids before/after); 834×1112 one cycle — 0.0px; rotation
+  768×1024→1024×768 with the panel open — 0.3px; visible-chapter tracking —
+  header switched "John 1"→"John 2" mid-scroll, `gr:lastRef.chapter`
+  followed to 2 (after its 500ms debounce), `#ch-1` stayed mounted (no
+  range reset), scrollTop never jumped back toward the top.
+- Fix/decision: `src/ui/anchor.ts` (new, pure/DOM-free) — width-gated ratio
+  anchor (`captureWidthAnchor`/`widthRestoreDelta`/`widthChanged`) plus
+  `pickVisibleChapter` (viewport-midpoint containment, greatest-intersection
+  fallback). Reader.tsx: a `ResizeObserver` gated strictly on rounded-width
+  change (not just any resize) re-seats the midpoint verse's captured ratio
+  point via `scrollTop +=`, instant, entirely separate ref from FL-004's
+  `anchorRef` (no shared state, no double-fire); an rAF-throttled scroll
+  listener recomputes both the width anchor and the visible chapter
+  continuously. Store gains `visibleChapter` + `setVisibleChapter` (writes
+  ONLY that field; appears in NO data-loading dependency array), a
+  500ms-debounced `gr:lastRef` write (`LAST_REF_DEBOUNCE_MS`, docs/config.md)
+  with a `pagehide` flush so closing the tab never loses the last moment of
+  reading position. `navigate()`/`restorePosition()` set `visibleChapter`
+  synchronously and cancel any pending debounced write. Consumers switched
+  to `visibleChapter`: header title (App.tsx), book/chapter picker's
+  current-book/-chapter highlight (BookPicker.tsx), `backup.ts` lastRef.
+  `chapter` (navigation) is untouched: Reader's load effect, anchorKey/
+  rangeKey, SearchPanel scope, targetVerse click-through.
+- Links: src/ui/anchor.ts, src/ui/Reader.tsx, src/state/store.ts,
+  src/ui/BookPicker.tsx, tests/reader-anchor.test.ts,
+  tests/visible-chapter.test.tsx, docs/verification/browser-smoke.mjs
+  (steps 10a-10d), FL-004 (distinct height/prepend anchor, cross-linked).

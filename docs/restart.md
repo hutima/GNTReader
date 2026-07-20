@@ -43,10 +43,14 @@ plan, SW policy. Then this file. Branch: `claude/gnt-ot-reading-pwa-yu5dnq`.
   chapter-streaming `searchScope` (progress/cancel, cap 300).
 - `persistence/db.ts` — idb `gnt-reader` v1, store `chapters`, zod-guarded.
 - `state/store.ts` — zustand: position, displayMode, selection, panels;
-  localStorage `gr:lastRef`/`gr:displayMode`.
-- `ui/` — App shell, Reader (sentinels/compensation — see FL-004),
+  localStorage `gr:lastRef`/`gr:displayMode`; `visibleChapter` tracks the
+  scrolled-to chapter separately from navigation `chapter` (debounced
+  `gr:lastRef` write + `pagehide` flush — FL-006).
+- `ui/` — App shell, Reader (sentinels/compensation — see FL-004; width-gated
+  reflow anchor + visible-chapter scroll tracking — FL-006, `ui/anchor.ts`),
   VerseView/TokenSpan (`after` separator rules), DetailPanel (side panel /
-  bottom sheet), BookPicker, SearchPanel, StrongsPanel, morph chips.
+  bottom sheet), BookPicker (current-chapter highlight follows
+  `visibleChapter`), SearchPanel, StrongsPanel, morph chips.
 - `sw.ts` + `pwa/pwa.ts` — precache shell, runtime `corpus-v1` cache-first
   for XML+lexicon, wait-then-user-prompted update flow (FL-001).
 
