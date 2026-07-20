@@ -149,6 +149,48 @@ function safeSet(key: string, value: string): void {
 }
 
 /**
+ * `visibleChapter` (the chapter the reader is actually scrolled to, distinct
+ * from the last *navigated* `chapter` — see Reader.tsx / anchor.ts, FL-006)
+ * changes on every scroll tick, so its `gr:lastRef` write is debounced; a
+ * `pagehide` listener flushes it immediately so closing the tab never loses
+ * the last few hundred ms of reading position. `navigate`/`restorePosition`
+ * cancel any pending debounce — they already write `gr:lastRef` immediately
+ * and must not be clobbered by a stale debounced write landing afterward.
+ */
+export const LAST_REF_DEBOUNCE_MS = 500;
+let lastRefTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingLastRef: z.infer<typeof PositionSchema> | null = null;
+
+function flushLastRefWrite(): void {
+  if (lastRefTimer != null) {
+    clearTimeout(lastRefTimer);
+    lastRefTimer = null;
+  }
+  if (pendingLastRef) {
+    safeSet(POSITION_KEY, JSON.stringify(pendingLastRef));
+    pendingLastRef = null;
+  }
+}
+
+function cancelPendingLastRefWrite(): void {
+  if (lastRefTimer != null) {
+    clearTimeout(lastRefTimer);
+    lastRefTimer = null;
+  }
+  pendingLastRef = null;
+}
+
+function scheduleLastRefWrite(pos: z.infer<typeof PositionSchema>): void {
+  pendingLastRef = pos;
+  if (lastRefTimer != null) clearTimeout(lastRefTimer);
+  lastRefTimer = setTimeout(flushLastRefWrite, LAST_REF_DEBOUNCE_MS);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', flushLastRefWrite);
+}
+
+/**
  * Reflect the theme choice onto the root element: an explicit `data-theme`
  * override wins over the `prefers-color-scheme` media query; 'system' removes
  * it so the OS setting is followed. See src/styles.css.
@@ -172,6 +214,11 @@ interface AppState {
   testament: Testament;
   bookNum: number;
   chapter: number;
+  /** Chapter the reader is actually scrolled to right now — may lag `chapter`
+   *  while a range spans multiple chapters. Never feeds back into navigation
+   *  or the Reader's load effect (FL-006). Drives the header title, the
+   *  picker's current-chapter highlight, and the persisted last-read ref. */
+  visibleChapter: number;
   /** Verse to scroll to after a navigation (search click-through). */
   targetVerse: number | null;
   displayMode: DisplayMode;
@@ -205,6 +252,8 @@ interface AppState {
    * the equivalent bulk setter for `lastRef`.
    */
   restorePosition(testament: Testament, bookNum: number, chapter: number): void;
+  /** Reader scroll tracking only (FL-006) — never call this to navigate. */
+  setVisibleChapter(chapter: number): void;
   clearTargetVerse(): void;
   setDisplayMode(mode: DisplayMode): void;
   setTheme(theme: ThemeChoice): void;
@@ -236,6 +285,7 @@ export const useAppStore = create<AppState>((set) => ({
   testament: initial.testament,
   bookNum: initial.bookNum,
   chapter: initial.chapter,
+  visibleChapter: initial.chapter,
   targetVerse: null,
   displayMode: loadMode(),
   theme: loadTheme(),
@@ -253,11 +303,13 @@ export const useAppStore = create<AppState>((set) => ({
   searchPrefill: null,
 
   navigate(testament, bookNum, chapter, verse) {
+    cancelPendingLastRefWrite();
     safeSet(POSITION_KEY, JSON.stringify({ testament, bookNum, chapter }));
     set({
       testament,
       bookNum,
       chapter,
+      visibleChapter: chapter,
       targetVerse: verse ?? null,
       panel: 'none',
       // Keep the selection when it lives in the destination chapter (gloss
@@ -266,8 +318,16 @@ export const useAppStore = create<AppState>((set) => ({
     });
   },
   restorePosition(testament, bookNum, chapter) {
+    cancelPendingLastRefWrite();
     safeSet(POSITION_KEY, JSON.stringify({ testament, bookNum, chapter }));
-    set({ testament, bookNum, chapter });
+    set({ testament, bookNum, chapter, visibleChapter: chapter });
+  },
+  setVisibleChapter(chapter) {
+    set((s) => {
+      if (s.visibleChapter === chapter) return {};
+      scheduleLastRefWrite({ testament: s.testament, bookNum: s.bookNum, chapter });
+      return { visibleChapter: chapter };
+    });
   },
   clearTargetVerse: () => set({ targetVerse: null }),
   setDisplayMode(mode) {

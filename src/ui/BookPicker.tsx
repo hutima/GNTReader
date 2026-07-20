@@ -10,6 +10,10 @@ import { useSheetDrag } from './useSheetDrag';
  */
 export function BookPicker() {
   const currentTestament = useAppStore((s) => s.testament);
+  const currentBookNum = useAppStore((s) => s.bookNum);
+  // The chapter actually scrolled to, not just last-navigated (FL-006) — so
+  // the highlight below follows continuous-scroll reading, not just taps.
+  const currentVisibleChapter = useAppStore((s) => s.visibleChapter);
   const navigate = useAppStore((s) => s.navigate);
   const openPanel = useAppStore((s) => s.openPanel);
 
@@ -59,22 +63,26 @@ export function BookPicker() {
 
         {!book ? (
           <div className="grid books">
-            {booksOf(testament).map((b) => (
-              <button
-                key={b.num}
-                type="button"
-                className="cell"
-                onClick={() => {
-                  if (b.chapters === 1) {
-                    navigate(testament, b.num, 1);
-                  } else {
-                    setBookNum(b.num);
-                  }
-                }}
-              >
-                {b.name}
-              </button>
-            ))}
+            {booksOf(testament).map((b) => {
+              const isCurrent = testament === currentTestament && b.num === currentBookNum;
+              return (
+                <button
+                  key={b.num}
+                  type="button"
+                  className={isCurrent ? 'cell current' : 'cell'}
+                  aria-current={isCurrent ? 'true' : undefined}
+                  onClick={() => {
+                    if (b.chapters === 1) {
+                      navigate(testament, b.num, 1);
+                    } else {
+                      setBookNum(b.num);
+                    }
+                  }}
+                >
+                  {b.name}
+                </button>
+              );
+            })}
           </div>
         ) : (
           <>
@@ -85,16 +93,23 @@ export function BookPicker() {
               <strong>{book.name}</strong>
             </div>
             <div className="grid chapters">
-              {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className="cell num"
-                  onClick={() => navigate(testament, book.num, c)}
-                >
-                  {c}
-                </button>
-              ))}
+              {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => {
+                const isCurrent =
+                  testament === currentTestament &&
+                  book.num === currentBookNum &&
+                  c === currentVisibleChapter;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    className={isCurrent ? 'cell num current' : 'cell num'}
+                    aria-current={isCurrent ? 'true' : undefined}
+                    onClick={() => navigate(testament, book.num, c)}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
             </div>
           </>
         )}

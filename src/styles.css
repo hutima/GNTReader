@@ -476,6 +476,11 @@ button {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
+.cell.current {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  font-weight: 600;
+}
 
 /* --- Search / Strong's panels ---------------------------------------------- */
 

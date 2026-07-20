@@ -3,6 +3,8 @@ import type { ReadingChapter, ReadingToken } from '@/domain/schema';
 import { bookInfo } from '@/io/books';
 import { loadChapter, prefetchAdjacent } from '@/io/sources';
 import { useAppStore } from '@/state/store';
+import { captureWidthAnchor, clamp01, pickVisibleChapter, widthChanged, widthRestoreDelta } from './anchor';
+import type { WidthAnchor } from './anchor';
 import { VerseView } from './VerseView';
 import { lexemeKey, parseKey } from './vocab';
 
@@ -17,6 +19,33 @@ import { lexemeKey, parseKey } from './vocab';
  */
 const WINDOW_RADIUS = 2;
 const MAX_LOADED = WINDOW_RADIUS * 2 + 1; // visible chapter ± 2 → at most 5
+
+/**
+ * A `.verse`'s own getBoundingClientRect() under-reports its true vertical
+ * extent: in "Both" mode each `.token` is an inline-flex column (surface
+ * over gloss) with `vertical-align: top`, and a token taller than its line's
+ * normal metrics can visually overflow below the line box without that
+ * overflow being reflected in the ANCESTOR span's reported fragment rects
+ * (verified in a real Chromium: a verse's bbox ended 20px above a directly
+ * nested token's own bbox). Reconstruct the real extent as the union of its
+ * tokens' rects instead, so the width-anchor ratio (FL-006) is computed
+ * against what's actually on screen.
+ */
+function verseVisualRect(verseEl: HTMLElement): { top: number; bottom: number } {
+  let top = Infinity;
+  let bottom = -Infinity;
+  verseEl.querySelectorAll<HTMLElement>('.token, .verse-num').forEach((el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return;
+    if (r.top < top) top = r.top;
+    if (r.bottom > bottom) bottom = r.bottom;
+  });
+  if (!Number.isFinite(top) || !Number.isFinite(bottom)) {
+    const r = verseEl.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom };
+  }
+  return { top, bottom };
+}
 
 export function Reader() {
   const { testament, bookNum, chapter, targetVerse, displayMode, selectedToken } = useAppStore();
@@ -61,6 +90,14 @@ export function Reader() {
   const articleRefs = useRef(new Map<number, HTMLElement>());
   /** Anchor captured before a range mutation; consumed by the layout effect. */
   const anchorRef = useRef<{ chapter: number; top: number } | null>(null);
+  /** Width-reflow ratio anchor (FL-006) — orthogonal to `anchorRef` above:
+   *  that one tracks height changes from prepend/trim, this one tracks width
+   *  changes from the desktop side panel opening/closing. */
+  const widthAnchorRef = useRef<WidthAnchor | null>(null);
+  /** Last content-box width seen by the ResizeObserver, to gate strictly on
+   *  width changes (ordinary scrolling/height changes must never trigger a
+   *  width compensation). */
+  const lastWidthRef = useRef<number | null>(null);
 
   const book = bookInfo(testament, bookNum);
   const maxChapter = book?.chapters ?? 1;
@@ -80,6 +117,76 @@ export function Reader() {
       }
     }
     anchorRef.current = null;
+  }, []);
+
+  /**
+   * Recompute both FL-006 mechanisms from the currently-committed layout:
+   * the width-reflow ratio anchor (the `.verse` at the viewport midpoint,
+   * and how far through its height that midpoint falls) and the visible
+   * chapter (for the header title, picker highlight, and persisted position
+   * — never for navigation). Reads only refs and the store's transient
+   * `getState()`, so it is stable across renders and safe to call from a
+   * scroll listener, a layout effect, or a ResizeObserver callback bound
+   * once at mount.
+   */
+  const captureAll = useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const scrollerRect = scroller.getBoundingClientRect();
+    // A resize "in flight": the browser can auto-clamp scrollTop the instant
+    // scrollHeight shrinks (closing the side panel back to a wider, shorter
+    // layout), which fires an ordinary 'scroll' event for the listener below
+    // BEFORE the ResizeObserver callback runs its own compensation (measured
+    // in real Chromium — the scroll event's own capture ran first and
+    // silently swapped the tracked verse for an unrelated one several
+    // chapters away, using pre-compensation geometry). `lastWidthRef` is
+    // updated ONLY inside the RO callback, so while it still disagrees with
+    // the scroller's actual current width, capturing now would stomp the
+    // anchor the RO is about to restore against — skip; the RO's own tail
+    // call re-captures once compensation has landed and the width matches.
+    if (lastWidthRef.current != null && widthChanged(lastWidthRef.current, scrollerRect.width)) {
+      return;
+    }
+    const viewTop = scrollerRect.top;
+    const viewBottom = scrollerRect.bottom;
+    const midX = (scrollerRect.left + scrollerRect.right) / 2;
+    const midY = viewTop + scroller.clientHeight / 2;
+
+    // `.verse` is an INLINE span that can wrap several lines, so its
+    // getBoundingClientRect() is a union box that routinely overlaps its
+    // neighbours' (a verse ending mid-line and the next starting on that same
+    // line share y-range) — a plain top/bottom containment scan over those
+    // union boxes can therefore miss the verse that's actually rendered at
+    // the midpoint and fall back to one several verses away. Ask the DOM what
+    // is really there first; only fall back to the pure rect scan (still
+    // exercised directly by tests/reader-anchor.test.ts) if that misses, e.g.
+    // the exact pixel lands on inter-line padding that hit-tests to the
+    // `.verses` container rather than a token.
+    const direct = document.elementFromPoint(midX, midY)?.closest<HTMLElement>('.verse');
+    if (direct && scroller.contains(direct)) {
+      const rect = verseVisualRect(direct);
+      const height = rect.bottom - rect.top;
+      widthAnchorRef.current = {
+        id: direct.id,
+        ratio: height > 0 ? clamp01((midY - rect.top) / height) : 0,
+      };
+    } else {
+      const verses: { id: string; top: number; bottom: number }[] = [];
+      scroller.querySelectorAll<HTMLElement>('.verse').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        verses.push({ id: el.id, top: r.top, bottom: r.bottom });
+      });
+      widthAnchorRef.current = captureWidthAnchor(verses, midY, viewTop, viewBottom);
+    }
+
+    const articles = [...articleRefs.current.entries()].map(([chapterNum, el]) => {
+      const r = el.getBoundingClientRect();
+      return { chapter: chapterNum, top: r.top, bottom: r.bottom };
+    });
+    const visible = pickVisibleChapter(articles, midY, viewTop, viewBottom);
+    if (visible != null && visible !== useAppStore.getState().visibleChapter) {
+      useAppStore.getState().setVisibleChapter(visible);
+    }
   }, []);
 
   // Anchor load: navigation resets the range to the selected chapter.
@@ -161,7 +268,8 @@ export function Reader() {
       }
       anchorRef.current = null;
     }
-  }, [chapters]);
+    captureAll();
+  }, [chapters, captureAll]);
 
   // Sentinels: extend the range when the reader nears either end. Recreated
   // whenever the RENDERED range changes (not just its length — an anchor
@@ -193,6 +301,64 @@ export function Reader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extend, rangeKey]);
 
+  // rAF-throttled scroll tracking (FL-006): recompute the width anchor and
+  // the visible chapter as the reader scrolls. Bound once per scroller mount
+  // — `captureAll` is stable (reads refs/getState only), so this never needs
+  // to rebind across range changes.
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        captureAll();
+      });
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', onScroll);
+  }, [captureAll]);
+
+  // Width-gated reflow compensation (FL-006): opening/closing the desktop
+  // side panel at 768–834px flex-shrinks the reader column, rewrapping every
+  // line and shifting scrollHeight by 130-151% — a plain height change (new
+  // chapter loaded) must NOT trigger this, only an actual width change.
+  // Bound once per scroller mount; reads only refs, so it survives range
+  // changes untouched.
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || typeof ResizeObserver === 'undefined') return;
+    lastWidthRef.current = scroller.getBoundingClientRect().width;
+    // Re-measure via getBoundingClientRect() (border-box) rather than the
+    // observer entry's contentRect (content-box, excluding padding) — using
+    // the SAME basis as the initial seed above and as captureAll()'s own
+    // reads keeps `lastWidthRef` numerically comparable everywhere it's
+    // checked (a border-box vs. content-box mismatch would otherwise look
+    // like a spurious width change at mount, or make captureAll()'s in-flight
+    // guard above never agree with the RO once it's actually settled).
+    const ro = new ResizeObserver(() => {
+      const newWidth = scroller.getBoundingClientRect().width;
+      const prevWidth = lastWidthRef.current;
+      lastWidthRef.current = newWidth;
+      if (prevWidth == null || !widthChanged(prevWidth, newWidth)) return; // height-only change
+      const anchor = widthAnchorRef.current;
+      if (anchor) {
+        const el = document.getElementById(anchor.id);
+        if (el) {
+          const rect = verseVisualRect(el);
+          const scrollerRect = scroller.getBoundingClientRect();
+          const delta = widthRestoreDelta(rect, anchor.ratio, scrollerRect.top, scroller.clientHeight);
+          scroller.scrollTop += delta;
+        }
+      }
+      captureAll();
+    });
+    ro.observe(scroller);
+    return () => ro.disconnect();
+  }, [captureAll]);
+
   // Search/Strong's click-through: scroll the target verse into view.
   useEffect(() => {
     if (!chapters.length || targetVerse == null) return;
@@ -210,24 +376,48 @@ export function Reader() {
   // Selecting a word the detail sheet would cover (or that is off-screen):
   // bring it to the middle of the still-visible reader area. No-op if it is
   // already fully visible — e.g. the desktop side panel, which covers nothing.
+  //
+  // Deferred TWO frames: on desktop, selecting a token can ALSO mount the
+  // side panel in the same commit, which flex-shrinks the reader and
+  // triggers the width-anchor's own ResizeObserver-driven scrollTop
+  // compensation (FL-006, above). A React passive effect is not guaranteed
+  // to run after that RO callback — measured in real Chromium, a single
+  // requestAnimationFrame deferral still ran BEFORE the RO's notification
+  // for the very same resize (RO fired ~0.1ms after that rAF, i.e. later in
+  // the same turn of the event loop), so this effect saw the token's STALE
+  // pre-compensation position (thousands of px off after a 130-151%
+  // reflow) and fired its OWN competing scrollBy, fighting the width-anchor
+  // restore. A SECOND rAF (scheduled from inside the first) reliably lands
+  // on the frame after the RO has already settled, so this really is the
+  // no-op the "already visible" guard intends on desktop.
   const selectedTokenId = selectedToken?.id ?? null;
   useEffect(() => {
     if (!selectedTokenId) return;
-    const scroller = scrollerRef.current;
-    const el = scroller?.querySelector<HTMLElement>('.token.selected');
-    if (!scroller || !el) return;
-    const scrollerRect = scroller.getBoundingClientRect();
-    // The mobile detail sheet is a fixed overlay; the visible reader area ends
-    // at its top edge. The desktop side panel covers nothing.
-    const sheet = document.querySelector<HTMLElement>('.detail.sheet');
-    const visibleTop = scrollerRect.top;
-    const visibleBottom = sheet
-      ? Math.min(scrollerRect.bottom, sheet.getBoundingClientRect().top)
-      : scrollerRect.bottom;
-    const rect = el.getBoundingClientRect();
-    if (rect.top >= visibleTop && rect.bottom <= visibleBottom) return; // already visible
-    const delta = (rect.top + rect.bottom) / 2 - (visibleTop + visibleBottom) / 2;
-    scroller.scrollBy({ top: delta, behavior: 'smooth' });
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(run);
+    });
+    function run() {
+      const scroller = scrollerRef.current;
+      const el = scroller?.querySelector<HTMLElement>('.token.selected');
+      if (!scroller || !el) return;
+      const scrollerRect = scroller.getBoundingClientRect();
+      // The mobile detail sheet is a fixed overlay; the visible reader area ends
+      // at its top edge. The desktop side panel covers nothing.
+      const sheet = document.querySelector<HTMLElement>('.detail.sheet');
+      const visibleTop = scrollerRect.top;
+      const visibleBottom = sheet
+        ? Math.min(scrollerRect.bottom, sheet.getBoundingClientRect().top)
+        : scrollerRect.bottom;
+      const rect = el.getBoundingClientRect();
+      if (rect.top >= visibleTop && rect.bottom <= visibleBottom) return; // already visible
+      const delta = (rect.top + rect.bottom) / 2 - (visibleTop + visibleBottom) / 2;
+      scroller.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, [selectedTokenId]);
 
   return (

@@ -17,7 +17,7 @@ const MODES = [
 ] as const;
 
 export default function App() {
-  const { testament, bookNum, chapter, displayMode, panel } = useAppStore();
+  const { testament, bookNum, visibleChapter, displayMode, panel } = useAppStore();
   const setDisplayMode = useAppStore((s) => s.setDisplayMode);
   const openPanel = useAppStore((s) => s.openPanel);
   const openSearch = useAppStore((s) => s.openSearch);
@@ -35,7 +35,7 @@ export default function App() {
           onClick={() => openPanel(panel === 'picker' ? 'none' : 'picker')}
           aria-haspopup="dialog"
         >
-          {book ? `${book.name} ${chapter}` : 'GNT Reader'} <span className="chev">▾</span>
+          {book ? `${book.name} ${visibleChapter}` : 'GNT Reader'} <span className="chev">▾</span>
         </button>
         <div className="header-spacer" />
         <div className="segmented compact" role="tablist" aria-label="Display mode">
