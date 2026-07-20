@@ -9,6 +9,12 @@ import { useAppStore } from '@/state/store';
  * button-dismissed card, not a gesture surface, so useSheetDrag does not
  * apply here. No backdrop-click dismissal — only the explicit buttons below
  * close it, so an accidental tap outside the card can't skip it on mobile.
+ *
+ * "Seen" is persisted (markTutorialSeen) the moment this first auto-opens,
+ * not only when the user taps Skip tour / Get started — otherwise a session
+ * that ends before dismissal (e.g. the mandatory UpdateModal reloading the
+ * app on "Refresh now", stacked on top of this one) leaves the flag unset
+ * and the tour auto-fires again next launch. See store.ts markTutorialSeen.
  */
 interface Step {
   title: string;
@@ -42,7 +48,9 @@ const TITLE_ID = 'tutorialStepTitle';
 
 export function TutorialModal() {
   const tutorialOpen = useAppStore((s) => s.tutorialOpen);
+  const tutorialSeen = useAppStore((s) => s.tutorialSeen);
   const closeTutorial = useAppStore((s) => s.closeTutorial);
+  const markTutorialSeen = useAppStore((s) => s.markTutorialSeen);
   const [step, setStep] = useState(0);
 
   // Always start from step 1 — whether this is the first-run auto-open or a
@@ -50,6 +58,12 @@ export function TutorialModal() {
   useEffect(() => {
     if (tutorialOpen) setStep(0);
   }, [tutorialOpen]);
+
+  // Fire-once: mark "seen" as soon as the tour is shown (first-run auto-open),
+  // not only when the user dismisses it — see the doc comment above.
+  useEffect(() => {
+    if (tutorialOpen && !tutorialSeen) markTutorialSeen();
+  }, [tutorialOpen, tutorialSeen, markTutorialSeen]);
 
   if (!tutorialOpen) return null;
 

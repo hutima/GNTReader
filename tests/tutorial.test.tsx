@@ -90,6 +90,28 @@ describe('first-launch tutorial', () => {
     await screen.findByRole('dialog', { name: 'Welcome to GNT Reader' });
   });
 
+  it('fires markTutorialSeen the moment the tour first auto-shows, before any dismissal', async () => {
+    // Simulate a genuine first launch: tutorialSeen false, key absent. (The
+    // module-scope loader already ran at import time, so poking localStorage
+    // alone wouldn't change store state — set both via the store action.)
+    localStorage.removeItem('gr:tutorialSeen');
+    useAppStore.setState({ tutorialOpen: true, tutorialSeen: false });
+
+    render(<App />);
+    const dialog = await screen.findByRole('dialog', { name: 'Welcome to GNT Reader' });
+
+    await waitFor(() => expect(localStorage.getItem('gr:tutorialSeen')).toBe('on'));
+    expect(useAppStore.getState().tutorialSeen).toBe(true);
+    // Persisting "seen" must not itself dismiss the tour.
+    expect(useAppStore.getState().tutorialOpen).toBe(true);
+    expect(dialog).toBeInTheDocument();
+
+    // Restore the pre-seeded state (see src/test/setup.ts) so sibling tests
+    // aren't affected; afterEach's closeTutorial() also re-persists 'on'.
+    useAppStore.setState({ tutorialOpen: false, tutorialSeen: true });
+    localStorage.setItem('gr:tutorialSeen', 'on');
+  });
+
   it('Settings "Replay tour" reopens the tutorial and closes the settings sheet', async () => {
     const user = userEvent.setup();
     // Start as a returning user who has already dismissed the tour once.
