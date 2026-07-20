@@ -128,3 +128,24 @@ reused; supersede rather than edit destructively. Every investigation over
   the window close is what actually severs the references).
 - Links: scripts/generate/harness.ts (`installFreshDomShim`, `closeDomShim`,
   `maybeGc`), scripts/generate/progress.ts (`buildGntBooks`, `buildOtBooks`).
+
+## FL-007 — happy-dom XML parser corrupts sibling order on self-closing tags (2026-07-20)
+
+- Status: fixed (regression guard: tests/wordstudy-generator.test.ts derivation
+  tests against inline self-closing-tag XML)
+- Symptom: parsing `strongsgreek.xml` (morphgnt/strongs-dictionary-xml) with
+  happy-dom's `DOMParser` produced entries whose children were nested inside
+  the wrong sibling, corrupting derivation text and Strong's-ref order.
+- Root cause: happy-dom's XML `DOMParser` does not treat `<tag ... />` as
+  self-closing for element names it doesn't already recognize as void — it
+  opens a new element and nests everything that follows inside it. MACULA
+  Lowfat XML (already parsed elsewhere in this app) never uses self-closing
+  tags, so the bug was latent until this generator parsed a dictionary XML
+  file (`<greek/>`, `<pronunciation/>`, `<strongsref/>`) that does.
+  (Same DOM as FL-003, a different quirk of it.)
+- Fix/decision: `fixSelfClosingXml()` in `scripts/generate/wordstudy.ts`
+  rewrites `<tag .../>` to `<tag ...></tag>` via regex before parsing —
+  scoped to this one file rather than patched globally, since no attribute
+  value in this dictionary contains the literal substring `/>`.
+- Links: scripts/generate/wordstudy.ts (`fixSelfClosingXml`,
+  `buildDerivations`), FL-003.
