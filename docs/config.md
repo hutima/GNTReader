@@ -16,7 +16,7 @@ One row per configuration axis. Precedence: built-in < config file < env var
 | Long-press marks lexeme | localStorage `gr:vocabMarkLexeme` | `off` | `on` (whole lexeme) \| `off` (just this parse) | active | default-off unless `on` | ui | 2026-07-06 |
 | Known words | localStorage `gr:knownLexemes` / `gr:knownParses` | `[]` | JSON string arrays of lexeme / parse keys | active | parsed w/ fallback to empty; Reset in Settings | ui | 2026-07-06 |
 | Last position | localStorage `gr:lastRef` | John 1 | any valid ref | active | zod parse w/ fallback | ui | 2026-07-06 |
-| Tutorial seen | localStorage `gr:tutorialSeen` | `off` (unset) | `on` \| `off` — first-launch step-through tour (TutorialModal), teaches vocab mode in the Both view; "Replay tour" in Settings reopens without resetting this flag | active | zod parse w/ fallback | ui | 2026-07-19 |
+| Tutorial seen | localStorage `gr:tutorialSeen` | `off` (unset) | `on` \| `off` — first-launch step-through tour (TutorialModal), teaches vocab mode in the Both view; persisted the moment the tour first auto-shows (fire-once), not only on dismissal, so an un-dismissed tour never re-fires after an app update; "Replay tour" in Settings reopens without resetting this flag | active | zod parse w/ fallback | ui | 2026-07-20 |
 | Search result cap | const `SEARCH_RESULT_CAP` | 300 | int > 0 | active | asserted in tests | search | 2026-07-06 |
 | Strong's result cap | const `STRONGS_RESULT_CAP` | 40 | int > 0 | active | asserted in tests | search | 2026-07-06 |
 | Prefetch radius | const `PREFETCH_CHAPTERS` | 2 | 0-2 | active | asserted in tests | reader | 2026-07-06 |

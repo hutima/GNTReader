@@ -270,6 +270,14 @@ interface AppState {
   closeTutorial(): void;
   /** Reopen the tutorial (Settings → Replay tour). Does not reset "seen". */
   openTutorial(): void;
+  /**
+   * Persist "seen" the moment the tutorial is first shown, without closing
+   * it. Called from TutorialModal's mount effect when it auto-opens on
+   * first launch, so a session that ends before the user dismisses it (e.g.
+   * the mandatory update modal reloading the app) doesn't leave the flag
+   * unset and cause the tour to auto-fire again next launch (fire-once).
+   */
+  markTutorialSeen(): void;
   selectToken(token: ReadingToken | null): void;
   openPanel(panel: PanelView): void;
   openStrongs(query: string): void;
@@ -394,6 +402,10 @@ export const useAppStore = create<AppState>((set) => ({
     set({ tutorialOpen: false, tutorialSeen: true });
   },
   openTutorial: () => set({ tutorialOpen: true }),
+  markTutorialSeen() {
+    safeSet(TUTORIAL_KEY, 'on');
+    set({ tutorialSeen: true });
+  },
   selectToken: (token) => set({ selectedToken: token }),
   openPanel: (panel) => set({ panel }),
   openStrongs: (query) => set({ panel: 'strongs', strongsQuery: query }),
