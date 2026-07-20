@@ -93,17 +93,68 @@ Do not merge any PR — owner merges. Follow `.claude/skills/project-change-cont
    (STEPBible) only; gloss distribution = truthful unavailable state (Cherith
    must not be shown as Berean/BSB). Progress analytics — both testaments.
 
-## In flight
+## PR 1 approved design (Opus doc, accepted by lead 2026-07-20)
 
-- Opus PR 1 design (reflow compensation architecture + visible-chapter
-  state) — running; decision doc pending.
+Implement in Reader.tsx + new pure module src/ui/anchor.ts:
+
+- **Reflow fix**: ResizeObserver on the scroller, gated strictly on WIDTH
+  delta. Continuously maintained midpoint anchor `{verseId, ratio}` — the
+  `.verse` (id `v-{ch}-{v}`) containing the scroller's vertical midpoint,
+  ratio = position of midpoint within that verse's rect. Captured on
+  rAF-throttled scroll, after initial load, after the `[chapters]` layout
+  effect, and after each width restore. On width change: scrollTop +=
+  (anchored point's new y) − midpoint, instant, then recapture. Fully
+  separate from FL-004's prepend `anchorRef` (height-delta, `[chapters]`
+  effect) — no shared refs, no double-fire. `overflow-anchor:none` stays.
+  Select-scroll effect unchanged (its visibility guard no-ops post-restore).
+- **Visible chapter**: store gains `visibleChapter` + `setVisibleChapter`
+  (writes ONLY visibleChapter; ~500ms-debounced `gr:lastRef` write, same
+  shape, + pagehide flush). Computed by the same rAF scroll handler via pure
+  `pickVisibleChapter` (midpoint containment primary, greatest visible
+  intersection fallback), recomputed after range mutations and width
+  restores. `navigate()`/`restorePosition()` also set it synchronously.
+  Consumers switched: header title (App.tsx), BookPicker highlight,
+  backup.ts lastRef. Unchanged on nav `chapter`: Reader load effect,
+  anchorKey/rangeKey, SearchPanel scope, targetVerse flow. visibleChapter
+  appears in NO data-loading dep array → loop impossible by construction.
+- **Tests**: tests/reader-anchor.test.ts (7 pure-geometry cases),
+  visible-chapter store/UI tests, browser-smoke additions: 5× open/close
+  drift <6px at 768×1024 + 834×1112, select-while-open, rotation, header
+  follows midpoint crossing John 1→2 with NO window reset.
+- **Failure log**: new FL-006 (width-reflow ≠ FL-004 height-insertion),
+  cross-linked to FL-004.
+
+## Branch strategy (lead ruling)
+
+Designated session branch `claude/ipad-reader-stability-nrdpvf` carries
+PR 1 (scope matches its name). Owner brief explicitly names branches for
+the other changes — treat as permission: `feat/generated-data-groundwork`
+(harness, from origin/main), then `feat/lexeme-word-study`, then
+`feat/vocabulary-progress` (each atop groundwork once merged/stacked).
+No PR is opened until its branch passes all gates; owner merges.
+
+## In flight (2026-07-20, may be stale if resuming cold)
+
+- Sonnet implementer: PR 1 on `claude/ipad-reader-stability-nrdpvf`
+  (main checkout) per the design above. Commits locally; lead reviews,
+  then independent verification re-run, then Opus adversarial review,
+  then push.
+- Sonnet implementer: groundwork on `feat/generated-data-groundwork`
+  (isolated git worktree, based on origin/main): scripts/generate/
+  harness (fetchPinned → .generate-cache → lowfat.ts under happy-dom shim),
+  revisions.json pinned SHAs, size report, offline smoke + tests.
 
 ## Next literal command
 
-If resuming cold: read this file, then check whether the PR 1 design doc
-arrived (session task output) and whether `fix/reader-viewport-state` work
-has started. If nothing else exists, re-run reconnaissance is NOT needed —
-all evidence above stands. Start with PR 1 implementation per the design doc.
+If resuming cold: `git -C /home/user/GNTReader log --oneline -5` and
+`git -C /home/user/GNTReader status --short` to see whether PR 1
+implementation commits exist; `git worktree list` + `git branch -a` for the
+groundwork branch. If implementation hasn't started, respawn implementers
+from the two specs above (all design decisions in this file stand — do NOT
+redo scouts or design). If commits exist, run the gates
+(`npm run typecheck && npm run lint && npm test && npm run build`) and the
+browser smoke (`npm run build && npm run preview -- --port 4319 &` then
+`node docs/verification/browser-smoke.mjs`), then proceed to review.
 
 ## Verified commands
 
