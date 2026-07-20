@@ -18,12 +18,13 @@ cleanupOutdatedCaches();
 /**
  * Runtime cache for on-demand, immutable data: corpus XML (MACULA Greek /
  * Hebrew, bundled fixtures), the Strong's lexicon JSON, and the generated
- * vocabulary-progress index JSON (`public/progress/`). Cache-first — a
- * chapter (or the progress index) fetched once stays readable offline. NEVER
- * precached (a testament is tens of MB). Bump this name in the same commit
- * as any change to the URL scheme or shape of the cached data (docs/config.md).
+ * vocabulary-progress + word-study index JSON (`public/progress/`,
+ * `public/wordstudy/`). Cache-first — a chapter (or either generated index)
+ * fetched once stays readable offline. NEVER precached (a testament is tens
+ * of MB). Bump this name in the same commit as any change to the URL scheme
+ * or shape of the cached data (docs/config.md).
  */
-export const CORPUS_CACHE = 'corpus-v2';
+export const CORPUS_CACHE = 'corpus-v3';
 
 function isCorpusRequest(url: URL): boolean {
   const p = url.pathname;
@@ -35,7 +36,8 @@ function isCorpusRequest(url: URL): boolean {
         p.includes('macula-greek') ||
         p.includes('macula-hebrew'))) ||
     (p.includes('/lexicon/') && p.endsWith('.json')) ||
-    (p.includes('/progress/') && p.endsWith('.json'))
+    (p.includes('/progress/') && p.endsWith('.json')) ||
+    (p.includes('/wordstudy/') && p.endsWith('.json'))
   );
 }
 
