@@ -440,6 +440,135 @@ button {
   align-items: center;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Word study (async section of the detail panel) ----------------------- */
+
+.word-study {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.word-study-heading {
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+}
+.ws-subheading {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.9rem 0 0.4rem;
+  font-weight: 600;
+}
+.ws-notice {
+  padding: 0.5rem 0;
+  text-align: left;
+}
+.ws-total {
+  margin: 0 0 0.4rem;
+}
+.ws-derivation dd {
+  color: var(--muted);
+}
+.ws-dt {
+  overflow-wrap: anywhere;
+}
+.ws-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.ws-bar-row {
+  display: grid;
+  grid-template-columns: minmax(4.5em, 30%) 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.ws-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-bar-other .ws-bar-label {
+  color: var(--muted);
+  font-style: italic;
+}
+.ws-bar-track {
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  border-radius: 3px;
+  height: 0.7rem;
+  overflow: hidden;
+}
+.ws-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--accent);
+  border-radius: 3px 0 0 3px;
+}
+.ws-bar-other .ws-bar-fill {
+  background: color-mix(in srgb, var(--accent) 55%, var(--muted));
+}
+.ws-bar-count {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ws-bar-pct {
+  color: var(--muted);
+}
+.ws-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0.4rem 0 0;
+}
+.ws-details {
+  margin-top: 0.6rem;
+}
+.ws-table-scroll {
+  overflow-x: auto;
+}
+.ws-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.85rem;
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+}
+.ws-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: 0.3rem;
+}
+.ws-table th,
+.ws-table td {
+  text-align: left;
+  padding: 0.3rem 0.4rem;
+  border-top: 1px solid var(--line);
+}
+.ws-table td:nth-child(2),
+.ws-table td:nth-child(3),
+.ws-table th:nth-child(2),
+.ws-table th:nth-child(3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Book picker ---------------------------------------------------------- */
 
 .panel-sheet {
