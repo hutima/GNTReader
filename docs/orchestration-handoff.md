@@ -32,6 +32,22 @@ PR 1's failure-log entry must be renumbered FL-006→FL-007 at/before merge
 (failure-log.md will conflict — resolve by appending after FL-006).
 PR 1 + PR 2 agents still running.
 
+STATUS 06:1x UTC — PR 1: Sonnet implementation COMPLETE (commits 4a72179,
+9df5080, 8290027: anchor.ts, width-gated RO, visibleChapter store field,
+BookPicker highlight, 7+ unit tests, smoke steps 10a-10d; its run: max
+drift 0.4px @768, FL-004 guard 0.3px). Lead merged origin/main into the
+branch (8e76766) resolving config.md/failure-log.md conflicts and
+renumbering the reflow entry FL-006→FL-007 repo-wide (PR #16 took FL-006).
+Lead verification: gates green (134/134 tests), BUT browser smoke step
+"834px close drift" FAILED 1-of-3 runs with drift 35px (~one text line;
+implementer had also seen it and mis-filed it as host contention —
+rerun-until-pass rejected). ESCALATED to Opus debugging agent (running):
+isolated 834px open/close loop with rAF/RO timing instrumentation, root
+cause + minimal fix + 20-loop proof + 3× full smoke required. Suspects:
+pending rAF capture racing the close-commit/RO delivery; smooth-scroll
+remnant; ratio rounding across rewrap. Do NOT merge PR 1 until this is
+fixed and re-verified.
+
 ## Mission
 
 Three independently mergeable changes (owner brief, 2026-07-20):
