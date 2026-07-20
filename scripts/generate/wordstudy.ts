@@ -16,7 +16,15 @@ import { GNT_BOOKS } from '../../src/io/books';
 import { parseXml } from '../../src/io/lowfat';
 import { normalizeStrong } from '../../src/io/strongs';
 import { WordStudySchema, type WordStudyData, type WordStudyEntry } from '../../src/io/wordstudy';
-import { fetchPinned, installDomShim, REPO_ROOT, REVISIONS, sizeReport } from './harness';
+import {
+  closeDomShim,
+  fetchPinned,
+  installFreshDomShim,
+  maybeGc,
+  REPO_ROOT,
+  REVISIONS,
+  sizeReport,
+} from './harness';
 
 // --- Raw token walk (deliberately NOT src/io/lowfat.ts's greekXmlToChapters:
 // that function's `gloss` field already falls back to `@english` when
@@ -326,23 +334,27 @@ async function main(): Promise<void> {
   const allTokens: RawToken[] = [];
   for (const book of GNT_BOOKS as BookInfo[]) {
     // A fresh happy-dom Window per book (rather than one shared Window for
-    // the whole run): happy-dom's Window retains internal bookkeeping for
-    // every Document it has ever parsed, so reusing one Window across all 27
-    // books grows unbounded and OOMs partway through. Discarding the whole
-    // Window after each book lets it (and its one Document) be collected as
-    // a unit. Pure memory management — does not affect output.
-    installDomShim();
+    // the whole run, `installDomShim`): happy-dom retains internal
+    // bookkeeping for every Document its owning Window has ever parsed, so
+    // reusing one Window across all 27 books grows unbounded and OOMs
+    // partway through (FL-006, discovered independently by this generator
+    // and by `scripts/generate/progress.ts` — see harness.ts). Opening and
+    // closing a Window per book keeps memory bounded; does not affect output.
+    const win = installFreshDomShim();
     if (!book.file) throw new Error(`GNT book "${book.name}" has no file name`);
     const path = await fetchPinned('macula-greek', `SBLGNT/lowfat/${book.file}`);
     const xml = readFileSync(path, 'utf8');
     const tokens = walkGreekTokensRaw(xml);
     allTokens.push(...tokens);
     console.log(`  ${book.name}: ${tokens.length} tokens`);
+    await closeDomShim(win);
+    maybeGc();
   }
-  installDomShim(); // fresh Window for the (smaller) Strong's-dictionary parse below
 
+  const dictWin = installFreshDomShim(); // fresh Window for the Strong's-dictionary parse
   const dictPath = await fetchPinned('morphgnt-strongs', 'strongsgreek.xml');
   const derivations = buildDerivations(readFileSync(dictPath, 'utf8'));
+  await closeDomShim(dictWin);
 
   const meta: WordStudyData['meta'] = {
     sources: [{ ...REVISIONS['macula-greek']! }, { ...REVISIONS['morphgnt-strongs']! }],

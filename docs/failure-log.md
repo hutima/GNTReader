@@ -128,6 +128,10 @@ reused; supersede rather than edit destructively. Every investigation over
   the window close is what actually severs the references).
 - Links: scripts/generate/harness.ts (`installFreshDomShim`, `closeDomShim`,
   `maybeGc`), scripts/generate/progress.ts (`buildGntBooks`, `buildOtBooks`).
+  `scripts/generate/wordstudy.ts` hit the same OOM independently (PR
+  `feat/lexeme-word-study`, also a 27-book GNT walk) and was switched to the
+  same `installFreshDomShim`/`closeDomShim` per-book pattern rather than
+  inventing a second fix.
 
 ## FL-007 — happy-dom XML parser corrupts sibling order on self-closing tags (2026-07-20)
 
