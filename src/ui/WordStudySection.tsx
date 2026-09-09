@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { ReadingToken } from '@/domain/schema';
+import { loadStrongs, strongsEntry } from '@/io/strongs';
 import { loadWordStudy, wordStudyForToken, type WordStudyData, type WordStudyEntry } from '@/io/wordstudy';
 
 /**
@@ -86,12 +87,29 @@ function WordStudyReady({
   entry: WordStudyEntry;
   openStrongs: (query: string) => void;
 }) {
+  const [strongsReady, setStrongsReady] = useState(false);
   const glossed = entry.g.reduce((sum, [, n]) => sum + n, 0);
   const top = entry.g.slice(0, TOP_GLOSSES);
   const rest = entry.g.slice(TOP_GLOSSES);
   const otherCount = rest.reduce((sum, [, n]) => sum + n, 0);
   const scale = Math.max(top[0]?.[1] ?? 0, otherCount, 1);
   const pct = (n: number) => (glossed > 0 ? (n / glossed) * 100 : 0);
+
+  useEffect(() => {
+    setStrongsReady(false);
+    if (entry.r !== 'derived') return;
+    let cancelled = false;
+    loadStrongs('grc')
+      .then(() => {
+        if (!cancelled) setStrongsReady(true);
+      })
+      .catch(() => {
+        // The derivation text remains useful with its source-provided lemmas.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.r, entry.dt]);
 
   return (
     <>
@@ -103,15 +121,22 @@ function WordStudyReady({
         <div className="row ws-derivation">
           <dt>Derived from</dt>
           <dd>
-            {entry.d.map((num, i) => (
-              <span key={num}>
-                {i > 0 && ', '}
-                <button type="button" className="link" onClick={() => openStrongs(`G${num}`)}>
-                  G{num}
-                </button>
-              </span>
-            ))}
-            {entry.dt && <span className="ws-dt"> — {entry.dt}</span>}
+            {entry.dt ? (
+              <DerivationText
+                text={entry.dt}
+                strongsReady={strongsReady}
+                openStrongs={openStrongs}
+              />
+            ) : (
+              entry.d.map((num, i) => (
+                <span key={`${num}-${i}`}>
+                  {i > 0 && ', '}
+                  <button type="button" className="link" onClick={() => openStrongs(`G${num}`)}>
+                    G{num}
+                  </button>
+                </span>
+              ))
+            )}
           </dd>
         </div>
       )}
@@ -186,4 +211,49 @@ function WordStudyReady({
       )}
     </>
   );
+}
+
+/**
+ * Preserve the Strong's dictionary's derivation prose, but turn every Greek
+ * Strong's reference in it into the existing lexicon link and append the
+ * lexicon gloss after the source-provided lemma. This covers all references
+ * in the sentence (including comparisons), rather than only entry.d's roots.
+ */
+function DerivationText({
+  text,
+  strongsReady,
+  openStrongs,
+}: {
+  text: string;
+  strongsReady: boolean;
+  openStrongs: (query: string) => void;
+}) {
+  const parts: ReactNode[] = [];
+  const refPattern = /\bG(\d+[a-z]?)(?:\s+\(([^()]*)\))?/gi;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let index = 0;
+
+  while ((match = refPattern.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+
+    const num = match[1]!;
+    const sourceLemma = match[2]?.trim();
+    const lexicon = strongsReady ? strongsEntry('grc', num) : undefined;
+    const lemma = sourceLemma || lexicon?.lemma;
+    const gloss = lexicon?.gloss;
+
+    parts.push(
+      <span key={`${match.index}-${num}-${index++}`}>
+        <button type="button" className="link" onClick={() => openStrongs(`G${num}`)}>
+          G{num}
+        </button>
+        {lemma ? ` (${lemma}${gloss ? `, ${gloss}` : ''})` : gloss ? ` (${gloss})` : ''}
+      </span>,
+    );
+    last = refPattern.lastIndex;
+  }
+
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts.length ? parts : text}</>;
 }
