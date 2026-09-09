@@ -4,16 +4,23 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
+import { clearSupplementalDefinitionCache } from '@/io/lexiconDefinitions';
 import { clearMemoryCache } from '@/io/sources';
 import { useAppStore } from '@/state/store';
 
 /**
  * Reader UI smoke (test plan item 5): selector renders, token tap opens the
  * detail panel, gloss mode swaps displayed text but preserves selection.
- * fetch is served from public/ on disk — same files the app ships.
+ * fetch is served from public/ on disk — same files the app ships — plus a
+ * tiny Dodson fixture for the supplemental-definition row.
  */
 
 const publicDir = join(__dirname, '..', 'public');
+
+const DODSON_FIXTURE = [
+  '"Strong\'s"\t"Goodrick-Kohlenberger"\t"Greek Word"\t"English Definition (brief)"\t"English Definition (longer)"',
+  '"0746"\t"0805"\t"a)rxh/"\t"beginning, origin"\t"beginning, origin, first cause or authority."',
+].join('\n');
 
 function fileFor(pathname: string): string | null {
   // The loader candidates are BASE_URL-relative ("/fixtures/…", "/lexicon/…").
@@ -30,8 +37,16 @@ function fileFor(pathname: string): string | null {
 
 beforeAll(() => {
   clearMemoryCache();
+  clearSupplementalDefinitionCache();
   vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
     const url = new URL(String(input), 'http://localhost/');
+    if (url.pathname.endsWith('/dodson.csv')) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () => DODSON_FIXTURE,
+      } as unknown as Response;
+    }
     const body = fileFor(url.pathname);
     if (body == null) return { ok: false, status: 404 } as Response;
     return {
@@ -45,6 +60,7 @@ beforeAll(() => {
 
 afterAll(() => {
   vi.unstubAllGlobals();
+  clearSupplementalDefinitionCache();
 });
 
 describe('reader UI smoke', () => {
@@ -56,7 +72,8 @@ describe('reader UI smoke', () => {
     await screen.findByRole('heading', { name: 'John 1' });
     expect(screen.getAllByText('Ἐν').length).toBeGreaterThan(0);
 
-    // Tap a token → detail panel with lemma, gloss, Strong's, parsing.
+    // Tap a token → detail panel with lemma, gloss, supplemental definition,
+    // Strong's, and parsing.
     await user.click(screen.getAllByText('ἀρχῇ')[0]!);
     const detail = await screen.findByRole('complementary', { name: 'Word details' });
     expect(detail).toHaveTextContent('ἀρχή');
@@ -65,6 +82,11 @@ describe('reader UI smoke', () => {
     expect(detail).toHaveTextContent('dat');
     // Greek transliteration falls back to the Strong's entry (never generated).
     await waitFor(() => expect(detail).toHaveTextContent('archḗ'));
+    // The contextual gloss remains separate from the richer lexicon definition.
+    await waitFor(() => {
+      expect(detail).toHaveTextContent('Definition');
+      expect(detail).toHaveTextContent('beginning, origin, first cause or authority. — Dodson');
+    });
 
     // Gloss mode: token text becomes the gloss…
     await user.click(screen.getByRole('tab', { name: 'Gloss' }));

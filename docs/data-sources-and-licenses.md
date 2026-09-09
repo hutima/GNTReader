@@ -9,6 +9,8 @@ is included, and none may be added except BSB or ASV (see ADR-0001).
 | Greek NT text + morphology (SBLGNT Lowfat) | [Clear-Bible/macula-greek](https://github.com/Clear-Bible/macula-greek) `SBLGNT/lowfat/` | MACULA Greek: CC BY 4.0; SBLGNT text © Society of Biblical Literature, CC BY 4.0 | Fetched per book on demand; John 1 sliced into a bundled fixture (`public/fixtures/gnt/`) |
 | Hebrew OT text + morphology (WLC Lowfat) | [Clear-Bible/macula-hebrew](https://github.com/Clear-Bible/macula-hebrew) `WLC/lowfat/` | MACULA Hebrew: CC BY 4.0; Westminster Leningrad Codex: public domain | Fetched per chapter on demand; Genesis 1 bundled as fixture (`public/fixtures/ot/`) |
 | Strong's lexicon (Greek + Hebrew, compact JSON) | James Strong, Exhaustive Concordance (1890, public domain) via the Open Scriptures machine-readable edition; compact JSON as prepared in hutima/ScriptureDiagrammer `public/lexicon/` | Open Scriptures edition: CC BY-SA | Bundled (`public/lexicon/`, ~1.2 MB), fetched on demand at runtime, never precached |
+| Dodson Greek definitions | [biblicalhumanities/Dodson-Greek-Lexicon](https://github.com/biblicalhumanities/Dodson-Greek-Lexicon) `dodson.csv`, pinned at `74f70358d4acfaf2f980bf2feb58ab7115cbbcbc` | Public domain; repository LICENSE is CC0 1.0 Universal | Fetched on demand from the pinned revision, indexed by Strong's number, and shown as the supplemental **Definition** in Greek token details; runtime-cached for offline reuse |
+| Brown-Driver-Briggs Hebrew definitions + Strong's crosswalk | [openscriptures/HebrewLexicon](https://github.com/openscriptures/HebrewLexicon) `BrownDriverBriggs.xml` + `LexicalIndex.xml`, pinned at `21c9add13bc727d3a951361778e97e3ff7afd1ce` | Original BDB text: public domain; Open Scriptures machine-readable transcription / lexical-index mappings: CC BY 4.0 | Fetched on demand from the pinned revision; `LexicalIndex.xml` maps Strong's numbers (including augmented homographs) to BDB entry ids, and the app shows the distinct BDB `<def>` sense labels as the supplemental **Definition** in Hebrew token details; runtime-cached for offline reuse |
 | English glosses / transliterations | Token-level `gloss`/`english`/`transliteration` attributes inside the MACULA files above | Same as their containing corpus (CC BY 4.0) | Gloss display mode; token detail panel |
 | Gentium Book Plus (scripture face — Greek) | SIL International, via the `@fontsource/gentium-book-plus` package | SIL Open Font License 1.1 (`src/fonts/Gentium-Book-Plus-OFL.txt`) | Vendored woff2 (greek + greek-ext subsets, weights 400/700) in `src/fonts/`; scripture text and the logo Α/Ω |
 | Source Sans 3 / Source Sans Pro (UI face) | Adobe / SIL, via the `@fontsource/source-sans-3` package | SIL Open Font License 1.1 (`src/fonts/Source-Sans-3-OFL.txt`) | Vendored woff2 (latin + latin-ext subsets, weights 400/600/700) in `src/fonts/`; all non-scripture UI text |
@@ -35,12 +37,15 @@ this harness:
   `public/wordstudy/gnt.json` — see the two word-study rows above and
   `docs/adr/0002-generated-lexical-indexes.md` for the full design
   (identity, gloss normalization, derivation extraction, sizing).
-- No new upstream sources beyond the rows above. The Strong's dictionary row
-  is a different machine-readable edition of the same public-domain Strong's
-  data as the bundled lexicon (see the Strong's row above); the two are NOT
-  reconciled into one file this PR — the bundled lexicon still drives the
-  "Strong's" detail row and lexicon search, and the generated index drives
-  only the new "Word study" section.
+- Supplemental Dodson/BDB definitions are runtime sources rather than generated
+  artifacts. Their immutable revision SHAs live beside their URLs in
+  `src/io/lexiconDefinitions.ts`; the service worker recognizes those exact
+  pinned URLs and runtime-caches successful responses.
+- The Strong's dictionary used for word-study derivations is a different
+  machine-readable edition of the same public-domain Strong's data as the
+  bundled lexicon. The bundled lexicon still drives the "Strong's" detail row
+  and lexicon search; the generated index drives the "Word study" section;
+  Dodson/BDB supply the separate supplemental "Definition" row.
 
 Provenance notes:
 
