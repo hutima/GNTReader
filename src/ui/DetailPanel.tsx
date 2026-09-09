@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import {
+  loadSupplementalDefinition,
+  type SupplementalDefinition,
+} from '@/io/lexiconDefinitions';
 import { loadStrongs, strongsEntry, type StrongsEntry } from '@/io/strongs';
 import { useAppStore } from '@/state/store';
 import { useIsMobile } from './useViewport';
@@ -11,7 +15,8 @@ import { WordStudySection } from './WordStudySection';
 
 /**
  * Token detail: desktop = right side panel, mobile = bottom sheet with a
- * grabber (iOS HIG). Shows surface, lemma, transliteration, gloss, Strong's,
+ * grabber (iOS HIG). Shows surface, lemma, transliteration, contextual gloss,
+ * a supplemental lexicon definition (Dodson Greek / BDB Hebrew), Strong's,
  * part of speech, syntactic role + clause structure, parsing chips, and the
  * reference (light syntax only — no full graph).
  *
@@ -30,6 +35,7 @@ export function DetailPanel() {
   const mobile = useIsMobile();
   const { grabberProps, sheetStyle } = useSheetDrag(() => selectToken(null));
   const [entry, setEntry] = useState<StrongsEntry | null>(null);
+  const [definition, setDefinition] = useState<SupplementalDefinition | null>(null);
 
   useEffect(() => {
     setEntry(null);
@@ -42,6 +48,23 @@ export function DetailPanel() {
       })
       .catch(() => {
         /* lexicon unavailable (offline, never cached) — panel shows "—" */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  useEffect(() => {
+    setDefinition(null);
+    if (!token?.strong) return;
+    let cancelled = false;
+    loadSupplementalDefinition(token.language, token.strong)
+      .then((next) => {
+        if (!cancelled) setDefinition(next);
+      })
+      .catch(() => {
+        // Supplemental definitions are optional; the contextual gloss and
+        // bundled Strong's entry remain available if an upstream fetch fails.
       });
     return () => {
       cancelled = true;
@@ -87,6 +110,15 @@ export function DetailPanel() {
           <dt>Gloss</dt>
           <dd>{displayGloss(token)}</dd>
         </div>
+        {definition && (
+          <div className="row">
+            <dt>Definition</dt>
+            <dd>
+              {definition.text}
+              <span className="definition-source"> — {definition.source}</span>
+            </dd>
+          </div>
+        )}
         {vocabMode && (
           <div className="row">
             <dt>Vocabulary</dt>
