@@ -9,7 +9,7 @@ One row per configuration axis. Precedence: built-in < config file < env var
 | `CORPUS_CACHE` | SW const (`src/sw.ts` + loaders) | `corpus-v4` | `corpus-vN` | active | static check test | app | 2026-09-08 (bumped v3→v4: pinned Dodson + BDB/Open Scriptures supplemental lexicon sources added to the runtime cache) |
 | `DB_NAME` / `DB_VERSION` | idb consts (`src/persistence/db.ts`) | `gnt-reader` / 2 | bump version with schema change (v2 added token `syntax`) | active | unit test | app | 2026-07-06 |
 | Display mode | localStorage `gr:displayMode` | `both` | `original` \| `gloss` \| `both` | active | zod parse w/ fallback | ui | 2026-07-19 |
-| Theme | localStorage `gr:theme` | `system` | `system` \| `light` \| `dark` (sets `data-theme` on `<html>`) | active | default-on unless `off` | ui | 2026-07-06 |
+| Theme | localStorage `gr:theme` | `system` | `system` \| `light` \| `dark` (sets `data-theme` on `<html>`) | active | zod parse w/ fallback | ui | 2026-07-06 |
 | Reading size | localStorage `gr:readingScale` | `1` | 0.8–1.8, 0.1 step (CSS var `--reading-scale`, not viewport zoom) | active | clamped on load | ui | 2026-07-06 |
 | Syntax highlight | localStorage `gr:syntax` | `on` | `on` \| `off` (tap-to-highlight clause by role) | active | default-on unless `off` | ui | 2026-07-06 |
 | Vocabulary mode | localStorage `gr:vocab` | `on` | `on` \| `off` (hide glosses for known words in Both mode) | active | default-on unless `off` | ui | 2026-07-19 |
