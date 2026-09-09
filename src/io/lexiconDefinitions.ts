@@ -14,7 +14,7 @@ import { normalizeStrong } from './strongs';
  * The service worker runtime-caches them after the first successful request.
  */
 
-export type SupplementalDefinitionSource = 'Dodson' | 'BDB';
+export type SupplementalDefinitionSource = 'Dodson' | 'BDB / Open Scriptures';
 
 export interface SupplementalDefinition {
   source: SupplementalDefinitionSource;
@@ -209,7 +209,7 @@ export async function loadSupplementalDefinition(
   }
 
   const definition = (await loadBdb()).get(key);
-  return definition ? { source: 'BDB', text: definition } : null;
+  return definition ? { source: 'BDB / Open Scriptures', text: definition } : null;
 }
 
 /** Test hook. */
