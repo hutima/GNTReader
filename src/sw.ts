@@ -17,14 +17,27 @@ cleanupOutdatedCaches();
 
 /**
  * Runtime cache for on-demand, immutable data: corpus XML (MACULA Greek /
- * Hebrew, bundled fixtures), the Strong's lexicon JSON, and the generated
+ * Hebrew, bundled fixtures), the Strong's lexicon JSON, generated
  * vocabulary-progress + word-study index JSON (`public/progress/`,
- * `public/wordstudy/`). Cache-first — a chapter (or either generated index)
+ * `public/wordstudy/`), and pinned supplemental lexicon source files
+ * (Dodson Greek and BDB/Open Scriptures Hebrew). Cache-first — anything
  * fetched once stays readable offline. NEVER precached (a testament is tens
  * of MB). Bump this name in the same commit as any change to the URL scheme
  * or shape of the cached data (docs/config.md).
  */
-export const CORPUS_CACHE = 'corpus-v3';
+export const CORPUS_CACHE = 'corpus-v4';
+
+function isSupplementalLexiconRequest(url: URL): boolean {
+  if (url.hostname !== 'raw.githubusercontent.com') return false;
+  return (
+    url.pathname ===
+      '/biblicalhumanities/Dodson-Greek-Lexicon/74f70358d4acfaf2f980bf2feb58ab7115cbbcbc/dodson.csv' ||
+    url.pathname ===
+      '/openscriptures/HebrewLexicon/21c9add13bc727d3a951361778e97e3ff7afd1ce/LexicalIndex.xml' ||
+    url.pathname ===
+      '/openscriptures/HebrewLexicon/21c9add13bc727d3a951361778e97e3ff7afd1ce/BrownDriverBriggs.xml'
+  );
+}
 
 function isCorpusRequest(url: URL): boolean {
   const p = url.pathname;
@@ -37,7 +50,8 @@ function isCorpusRequest(url: URL): boolean {
         p.includes('macula-hebrew'))) ||
     (p.includes('/lexicon/') && p.endsWith('.json')) ||
     (p.includes('/progress/') && p.endsWith('.json')) ||
-    (p.includes('/wordstudy/') && p.endsWith('.json'))
+    (p.includes('/wordstudy/') && p.endsWith('.json')) ||
+    isSupplementalLexiconRequest(url)
   );
 }
 
