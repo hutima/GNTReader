@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearStrongsCache } from '@/io/strongs';
@@ -112,7 +112,7 @@ describe('WordStudySection', () => {
     expect(bars.queryByText('statement')).not.toBeInTheDocument(); // folded, not its own bar
 
     const derivedRow = screen.getByText('Derived from').closest<HTMLElement>('.row')!;
-    await within(derivedRow).findByText('from G3004 (λέγω, to say);', { selector: 'dd' });
+    await waitFor(() => expect(derivedRow).toHaveTextContent('from G3004 (λέγω, to say);'));
     const link = within(derivedRow).getByRole('button', { name: 'G3004' });
     await userEvent.click(link);
     expect(openStrongs).toHaveBeenCalledWith('G3004');
@@ -125,9 +125,10 @@ describe('WordStudySection', () => {
 
     const derivedLabel = await screen.findByText('Derived from');
     const derivedRow = derivedLabel.closest<HTMLElement>('.row')!;
-    await within(derivedRow).findByText(
-      'from G303 (ἀνά, up) and G2775 (κεφαλαιόω, to sum up) (in its original sense);',
-      { selector: 'dd' },
+    await waitFor(() =>
+      expect(derivedRow).toHaveTextContent(
+        'from G303 (ἀνά, up) and G2775 (κεφαλαιόω, to sum up) (in its original sense);',
+      ),
     );
 
     const refs = within(derivedRow).getAllByRole('button');
@@ -142,9 +143,10 @@ describe('WordStudySection', () => {
 
     const derivedLabel = await screen.findByText('Derived from');
     const derivedRow = derivedLabel.closest<HTMLElement>('.row')!;
-    await within(derivedRow).findByText(
-      'from G303 (ἀνά) and G2775 (κεφαλαιόω) (in its original sense);',
-      { selector: 'dd' },
+    await waitFor(() =>
+      expect(derivedRow).toHaveTextContent(
+        'from G303 (ἀνά) and G2775 (κεφαλαιόω) (in its original sense);',
+      ),
     );
     expect(within(derivedRow).getAllByRole('button')).toHaveLength(2);
   });
