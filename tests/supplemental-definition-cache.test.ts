@@ -51,7 +51,7 @@ describe('supplemental definition loading', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(loadSupplementalDefinition('hbo', 'H0430')).resolves.toEqual({
-      source: 'BDB',
+      source: 'BDB / Open Scriptures',
       text: 'gods; God',
     });
     await loadSupplementalDefinition('hbo', '430');
