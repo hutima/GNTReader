@@ -1,13 +1,54 @@
 import { useEffect, useMemo, useState } from 'react';
+import { foldAccents } from '@/domain/normalize';
 import type { ReadingLanguage } from '@/domain/schema';
 import { loadStrongs, searchStrongs, type StrongsEntry } from '@/io/strongs';
 import { useAppStore } from '@/state/store';
 import { useSheetDrag } from './useSheetDrag';
 
+const GREEK_ALPHABET = [
+  { key: 'α', symbol: 'Α', name: 'Alpha' },
+  { key: 'β', symbol: 'Β', name: 'Beta' },
+  { key: 'γ', symbol: 'Γ', name: 'Gamma' },
+  { key: 'δ', symbol: 'Δ', name: 'Delta' },
+  { key: 'ε', symbol: 'Ε', name: 'Epsilon' },
+  { key: 'ζ', symbol: 'Ζ', name: 'Zeta' },
+  { key: 'η', symbol: 'Η', name: 'Eta' },
+  { key: 'θ', symbol: 'Θ', name: 'Theta' },
+  { key: 'ι', symbol: 'Ι', name: 'Iota' },
+  { key: 'κ', symbol: 'Κ', name: 'Kappa' },
+  { key: 'λ', symbol: 'Λ', name: 'Lambda' },
+  { key: 'μ', symbol: 'Μ', name: 'Mu' },
+  { key: 'ν', symbol: 'Ν', name: 'Nu' },
+  { key: 'ξ', symbol: 'Ξ', name: 'Xi' },
+  { key: 'ο', symbol: 'Ο', name: 'Omicron' },
+  { key: 'π', symbol: 'Π', name: 'Pi' },
+  { key: 'ρ', symbol: 'Ρ', name: 'Rho' },
+  { key: 'σ', symbol: 'Σ', name: 'Sigma' },
+  { key: 'τ', symbol: 'Τ', name: 'Tau' },
+  { key: 'υ', symbol: 'Υ', name: 'Upsilon' },
+  { key: 'φ', symbol: 'Φ', name: 'Phi' },
+  { key: 'χ', symbol: 'Χ', name: 'Chi' },
+  { key: 'ψ', symbol: 'Ψ', name: 'Psi' },
+  { key: 'ω', symbol: 'Ω', name: 'Omega' },
+] as const;
+
+function compareStrongNumber(a: StrongsEntry, b: StrongsEntry): number {
+  const pa = a.strong.match(/^0*(\d+)([a-z]*)$/i);
+  const pb = b.strong.match(/^0*(\d+)([a-z]*)$/i);
+  if (!pa || !pb) return a.strong.localeCompare(b.strong, undefined, { numeric: true });
+  return Number(pa[1]) - Number(pb[1]) || pa[2]!.localeCompare(pb[2]!);
+}
+
+function entryId(language: ReadingLanguage, strong: string): string {
+  return `strongs-${language}-${strong.replace(/[^a-z0-9_-]/gi, '-')}`;
+}
+
 /**
- * Strong's lexicon search: by number, lemma, transliteration, gloss, or KJV
- * rendering, with a Greek/Hebrew language filter. "Occurrences" hands the
- * entry to the morphology search scoped to the current book.
+ * Strong's lexicon browser/search: blank search browses the entire lexicon in
+ * Strong's-number order; a query searches by number, lemma, transliteration,
+ * gloss, or KJV rendering. Greek browse mode adds an alpha-to-omega jump rail.
+ * "Occurrences" hands the entry to the morphology search scoped to the current
+ * book.
  */
 export function StrongsPanel() {
   const testament = useAppStore((s) => s.testament);
@@ -42,13 +83,39 @@ export function StrongsPanel() {
     };
   }, [language]);
 
-  const results = useMemo(
-    () => (entries ? searchStrongs(entries, query) : []),
-    [entries, query],
+  const browsing = query.trim().length === 0;
+
+  const browseEntries = useMemo(
+    () => (entries ? [...entries].sort(compareStrongNumber) : []),
+    [entries],
   );
+
+  const results = useMemo(
+    () => (entries ? (browsing ? browseEntries : searchStrongs(entries, query)) : []),
+    [browseEntries, browsing, entries, query],
+  );
+
+  const greekLetterStarts = useMemo(() => {
+    const starts = new Map<string, string>();
+    if (language !== 'grc') return starts;
+    for (const entry of browseEntries) {
+      const first = foldAccents(entry.lemma).charAt(0);
+      if (!starts.has(first)) starts.set(first, entry.strong);
+    }
+    return starts;
+  }, [browseEntries, language]);
 
   function findOccurrences(entry: StrongsEntry) {
     openSearch({ strong: entry.strong });
+  }
+
+  function jumpToGreekLetter(letter: string) {
+    const strong = greekLetterStarts.get(letter);
+    if (!strong) return;
+    document.getElementById(entryId('grc', strong))?.scrollIntoView({
+      block: 'start',
+      behavior: 'smooth',
+    });
   }
 
   return (
@@ -60,6 +127,9 @@ export function StrongsPanel() {
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Keep the hardened grabber as the sheet's own sticky drag target.
+            The lexicon scrolls underneath it; do not move pointer handlers
+            onto the list or alphabet rail. */}
         <div className="grabber" {...grabberProps} />
         <div className="field-row">
           <label className="field grow">
@@ -69,7 +139,7 @@ export function StrongsPanel() {
               value={query}
               placeholder="number (746 / G746), lemma, transliteration, gloss…"
               onChange={(e) => setQuery(e.target.value)}
-              autoFocus
+              autoFocus={Boolean(initialQuery.trim())}
             />
           </label>
           <div className="segmented" role="tablist" aria-label="Lexicon language">
@@ -102,34 +172,67 @@ export function StrongsPanel() {
         {!entries && !error && <div className="notice">Loading lexicon…</div>}
 
         {entries && (
-          <ul className="hit-list">
-            {results.map((e) => (
-              <li key={`${e.language}${e.strong}`}>
-                <div className="hit strongs-hit">
-                  <span className="hit-ref">
-                    {e.language === 'hbo' ? 'H' : 'G'}
-                    {e.strong}
-                  </span>
-                  <span className={`hit-surface ${e.language}`}>{e.lemma}</span>
-                  <span className="hit-meta">
-                    {e.translit ?? '—'}
-                    {e.gloss ? ` · ${e.gloss}` : ''}
-                  </span>
-                  {/* Occurrence search runs over the CURRENT book — only
-                      offered when the entry's language matches it, so a
-                      Hebrew number is never counted against Greek tokens. */}
-                  {((e.language === 'grc') === (testament === 'gnt')) && (
-                    <button type="button" className="link" onClick={() => findOccurrences(e)}>
-                      Occurrences ›
+          <>
+            <div className="results-count" aria-live="polite">
+              {browsing
+                ? `${results.length.toLocaleString()} entries · Strong’s number order`
+                : `${results.length} search ${results.length === 1 ? 'match' : 'matches'}`}
+            </div>
+
+            {browsing && language === 'grc' && (
+              <nav className="strongs-alpha-nav" aria-label="Greek alphabet">
+                {GREEK_ALPHABET.map(({ key, symbol, name }) => {
+                  const available = greekLetterStarts.has(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      className="strongs-alpha-button"
+                      aria-label={`Jump to ${name}`}
+                      title={name}
+                      disabled={!available}
+                      onClick={() => jumpToGreekLetter(key)}
+                    >
+                      {symbol}
                     </button>
-                  )}
-                </div>
-              </li>
-            ))}
-            {query.trim() && results.length === 0 && (
-              <li className="notice">No matches.</li>
+                  );
+                })}
+              </nav>
             )}
-          </ul>
+
+            <ul className="hit-list strongs-browse-list">
+              {results.map((e) => (
+                <li
+                  id={entryId(e.language, e.strong)}
+                  className="strongs-entry-anchor"
+                  key={`${e.language}${e.strong}`}
+                >
+                  <div className="hit strongs-hit">
+                    <span className="hit-ref">
+                      {e.language === 'hbo' ? 'H' : 'G'}
+                      {e.strong}
+                    </span>
+                    <span className={`hit-surface ${e.language}`}>{e.lemma}</span>
+                    <span className="hit-meta">
+                      {e.translit ?? '—'}
+                      {e.gloss ? ` · ${e.gloss}` : ''}
+                    </span>
+                    {/* Occurrence search runs over the CURRENT book — only
+                        offered when the entry's language matches it, so a
+                        Hebrew number is never counted against Greek tokens. */}
+                    {((e.language === 'grc') === (testament === 'gnt')) && (
+                      <button type="button" className="link" onClick={() => findOccurrences(e)}>
+                        Occurrences ›
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+              {!browsing && results.length === 0 && (
+                <li className="notice">No matches.</li>
+              )}
+            </ul>
+          </>
         )}
       </section>
     </div>
