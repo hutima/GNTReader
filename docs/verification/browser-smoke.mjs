@@ -260,14 +260,34 @@ try {
   await page.getByRole('complementary', { name: 'Word details' }).waitFor();
   ok(`morphology search (aorist) returns hits; click-through to ${firstHit} opens detail`);
 
-  // 7. Strong's search + occurrences (entry point moved into Settings →
-  // "Browse Strong's lexicon"; there is no direct header button for it).
+  // 7. Strong's browse + search + occurrences (entry point lives in
+  // Settings → "Browse Strong's lexicon").
   await page.getByRole('button', { name: 'Settings' }).click();
   const settingsDialog = page.getByRole('dialog', { name: 'Settings' });
   await settingsDialog.waitFor();
   await settingsDialog.getByRole('button', { name: 'Browse Strong’s lexicon' }).click();
   const sdialog = page.getByRole('dialog', { name: 'Strong’s lexicon' });
   await sdialog.waitFor();
+
+  // Blank query is browse mode: the full Greek dictionary is ordered by
+  // Strong's number (G1 first), and the sticky alphabet rail can jump deep
+  // into the same scrolling sheet.
+  await sdialog.locator('.strongs-hit').first().waitFor({ timeout: 10000 });
+  const firstBrowseEntry = await sdialog.locator('.strongs-hit').first().textContent();
+  if (!firstBrowseEntry.includes('G1')) {
+    throw new Error(`Strong's browse did not start at G1: ${firstBrowseEntry}`);
+  }
+  const scrollBeforeOmega = await sdialog.evaluate((el) => el.scrollTop);
+  await sdialog.getByRole('button', { name: 'Jump to Omega' }).click();
+  await page.waitForTimeout(350);
+  const scrollAfterOmega = await sdialog.evaluate((el) => el.scrollTop);
+  if (!(scrollAfterOmega > scrollBeforeOmega + 100)) {
+    throw new Error(
+      `Omega jump did not scroll the lexicon (${scrollBeforeOmega} → ${scrollAfterOmega})`,
+    );
+  }
+
+  // Existing ranked search remains available on top of browse mode.
   await sdialog.getByRole('searchbox').fill('logos');
   await sdialog.locator('.strongs-hit').first().waitFor();
   const entry = await sdialog.locator('.strongs-hit').first().textContent();
@@ -277,9 +297,67 @@ try {
   await mdialog.waitFor();
   await mdialog.getByRole('button', { name: 'Search' }).click();
   await mdialog.locator('.hit').first().waitFor({ timeout: 30000 });
-  ok('Strong’s search ranks G3056 first; occurrence search finds hits in John');
+  ok('Strong’s browse starts at G1, Α→Ω jump scrolls, search ranks G3056, occurrence search works');
   await page.keyboard.press('Escape');
   await page.locator('.sheet-backdrop').click({ position: { x: 5, y: 5 } });
+
+  // 7b. Mobile regression: scrolling the now-long Strong's browse must not
+  // break the sheet's swipe-down grabber. This is intentionally real-browser
+  // coverage because happy-dom cannot validate pointer capture/sticky layout.
+  {
+    const ctx = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    const p = await ctx.newPage();
+    await p.goto(URL_BASE, { waitUntil: 'load' });
+    await p.getByRole('heading', { name: 'John 1' }).waitFor({ timeout: 15000 });
+    await dismissTutorialIfPresent(p);
+
+    await p.getByRole('button', { name: 'Settings' }).click();
+    const mobileSettings = p.getByRole('dialog', { name: 'Settings' });
+    await mobileSettings.waitFor();
+    await mobileSettings.getByRole('button', { name: 'Browse Strong’s lexicon' }).click();
+
+    const mobileStrongs = p.getByRole('dialog', { name: 'Strong’s lexicon' });
+    await mobileStrongs.waitFor();
+    await mobileStrongs.locator('.strongs-hit').first().waitFor({ timeout: 10000 });
+
+    const scrollable = await mobileStrongs.evaluate((el) => ({
+      clientHeight: el.clientHeight,
+      scrollHeight: el.scrollHeight,
+    }));
+    if (!(scrollable.scrollHeight > scrollable.clientHeight)) {
+      throw new Error(
+        `Strong's mobile browse is not scrollable (${scrollable.scrollHeight}/${scrollable.clientHeight})`,
+      );
+    }
+    await mobileStrongs.evaluate((el) => {
+      el.scrollTop = Math.min(1200, el.scrollHeight - el.clientHeight);
+    });
+    await p.waitForTimeout(150);
+
+    const grabber = mobileStrongs.locator('.grabber');
+    const sheetBox = await mobileStrongs.boundingBox();
+    const grabberBox = await grabber.boundingBox();
+    if (!sheetBox || !grabberBox) throw new Error('Strong’s mobile grabber has no layout box');
+    if (Math.abs(grabberBox.y - sheetBox.y) > 8) {
+      throw new Error(
+        `grabber did not stay pinned after lexicon scroll (sheet y=${sheetBox.y}, grabber y=${grabberBox.y})`,
+      );
+    }
+
+    const gx = grabberBox.x + grabberBox.width / 2;
+    const gy = grabberBox.y + grabberBox.height / 2;
+    await p.mouse.move(gx, gy);
+    await p.mouse.down();
+    await p.mouse.move(gx, gy + 150, { steps: 8 });
+    await p.mouse.up();
+    await mobileStrongs.waitFor({ state: 'detached', timeout: 5000 });
+    ok('390px Strong’s browse scrolls; sticky grabber remains reachable and swipe-down closes it');
+    await ctx.close();
+  }
 
   // 8. Hebrew OT: Genesis 1 renders RTL.
   await page.getByRole('button', { name: /John/ }).first().click();

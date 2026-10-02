@@ -733,6 +733,49 @@ button.hit:active {
   grid-template-columns: auto auto 1fr auto;
 }
 
+
+/* Blank Strong's search is a true browse mode: the full dictionary stays in
+   number order, while this compact alphabet rail remains reachable as the
+   sheet scrolls. The grabber itself remains the higher-z sticky drag target. */
+.strongs-alpha-nav {
+  position: sticky;
+  top: 1.65rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.15rem;
+  overflow-x: auto;
+  margin: 0.15rem -1rem 0;
+  padding: 0.35rem 1rem 0.45rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.strongs-alpha-nav::-webkit-scrollbar {
+  display: none;
+}
+.strongs-alpha-button {
+  flex: 0 0 auto;
+  min-width: 1.9rem;
+  min-height: 2rem;
+  border-radius: 7px;
+  color: var(--accent);
+  font-family: 'Gentium Book Plus', 'SBL Greek', 'Gentium Plus', Gentium, serif;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.strongs-alpha-button:active:not(:disabled) {
+  background: var(--accent-soft);
+}
+.strongs-alpha-button:disabled {
+  color: var(--muted);
+  opacity: 0.35;
+  cursor: default;
+}
+.strongs-entry-anchor {
+  scroll-margin-top: 4rem;
+}
+
 @media (min-width: 768px) {
   .sheet-backdrop {
     justify-content: center;
@@ -745,6 +788,9 @@ button.hit:active {
   }
   .panel-sheet .grabber {
     display: none;
+  }
+  .strongs-alpha-nav {
+    top: 0;
   }
 }
 
