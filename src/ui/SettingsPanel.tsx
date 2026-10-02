@@ -144,6 +144,16 @@ export function SettingsPanel() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="grabber" {...grabberProps} />
+        <div className="panel-desktop-actions">
+          <button
+            type="button"
+            className="close"
+            aria-label="Close settings"
+            onClick={() => openPanel('none')}
+          >
+            ✕
+          </button>
+        </div>
         <div className="settings">
           <section className="settings-section">
             <h3>How to use</h3>
