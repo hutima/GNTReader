@@ -34,6 +34,16 @@ export function BookPicker() {
         style={sheetStyle}
       >
         <div className="grabber" {...grabberProps} />
+        <div className="panel-desktop-actions">
+          <button
+            type="button"
+            className="close"
+            aria-label="Close book picker"
+            onClick={() => openPanel('none')}
+          >
+            ✕
+          </button>
+        </div>
         <div className="segmented" role="tablist" aria-label="Testament">
           <button
             type="button"
