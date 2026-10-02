@@ -170,6 +170,17 @@ async function dismissTutorialIfPresent(p) {
   else if (await getStarted.isVisible().catch(() => false)) await getStarted.click();
 }
 
+/** Desktop panel sheets replace the mobile drag handle with a visible ✕. */
+async function closeDesktopSheet(p, dialog, closeName) {
+  const close = dialog.getByRole('button', { name: closeName });
+  if (!(await close.isVisible())) throw new Error(`${closeName} is not visible on desktop`);
+  if (await dialog.locator('.grabber').isVisible()) {
+    throw new Error(`mobile grabber is still visible beside ${closeName} on desktop`);
+  }
+  await close.click();
+  await dialog.waitFor({ state: 'detached', timeout: 5000 });
+}
+
 /** Reader viewport midpoint in page coordinates. */
 async function readerMidpoint(p) {
   return p.evaluate(() => {
@@ -186,6 +197,33 @@ try {
   await page.getByText('Ἐν', { exact: true }).first().waitFor();
   await dismissTutorialIfPresent(page); // fresh profile auto-opens it; would block step 2's click
   ok('app loads; John 1 renders Greek from fixture');
+
+  // 1b. Desktop sheet chrome: every sheet-style panel swaps the mobile
+  // grabber for the same circular ✕ affordance used by word details.
+  await page.getByRole('button', { name: /John/ }).first().click();
+  const pickerChrome = page.getByRole('dialog', { name: 'Choose book and chapter' });
+  await pickerChrome.waitFor();
+  await closeDesktopSheet(page, pickerChrome, 'Close book picker');
+
+  await page.getByRole('button', { name: 'Morphology search' }).click();
+  const searchChrome = page.getByRole('dialog', { name: 'Morphology search' });
+  await searchChrome.waitFor();
+  await closeDesktopSheet(page, searchChrome, 'Close search');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const settingsChrome = page.getByRole('dialog', { name: 'Settings' });
+  await settingsChrome.waitFor();
+  await closeDesktopSheet(page, settingsChrome, 'Close settings');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const settingsForStrongs = page.getByRole('dialog', { name: 'Settings' });
+  await settingsForStrongs.waitFor();
+  await settingsForStrongs.getByRole('button', { name: 'Browse Strong’s lexicon' }).click();
+  const strongsChrome = page.getByRole('dialog', { name: 'Strong’s lexicon' });
+  await strongsChrome.waitFor();
+  await strongsChrome.locator('.strongs-hit').first().waitFor({ timeout: 10000 });
+  await closeDesktopSheet(page, strongsChrome, 'Close Strong’s lexicon');
+  ok('desktop sheets: Book Picker, Search, Settings, and Strong’s show working ✕ controls; grabbers hidden');
 
   // 2. Token tap → detail panel.
   await page.getByText('ἀρχῇ', { exact: true }).first().click();
@@ -323,6 +361,13 @@ try {
     const mobileStrongs = p.getByRole('dialog', { name: 'Strong’s lexicon' });
     await mobileStrongs.waitFor();
     await mobileStrongs.locator('.strongs-hit').first().waitFor({ timeout: 10000 });
+
+    if (await mobileStrongs.getByRole('button', { name: 'Close Strong’s lexicon' }).isVisible()) {
+      throw new Error('desktop Strong’s close button is visible on the mobile sheet');
+    }
+    if (!(await mobileStrongs.locator('.grabber').isVisible())) {
+      throw new Error('mobile Strong’s grabber is not visible');
+    }
 
     const scrollable = await mobileStrongs.evaluate((el) => ({
       clientHeight: el.clientHeight,
