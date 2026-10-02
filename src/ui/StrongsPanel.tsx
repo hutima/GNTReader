@@ -131,6 +131,16 @@ export function StrongsPanel() {
             The lexicon scrolls underneath it; do not move pointer handlers
             onto the list or alphabet rail. */}
         <div className="grabber" {...grabberProps} />
+        <div className="panel-desktop-actions">
+          <button
+            type="button"
+            className="close"
+            aria-label="Close Strong’s lexicon"
+            onClick={() => openPanel('none')}
+          >
+            ✕
+          </button>
+        </div>
         <div className="field-row">
           <label className="field grow">
             <span>Strong’s search</span>
