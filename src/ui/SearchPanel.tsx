@@ -144,6 +144,16 @@ export function SearchPanel() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="grabber" {...grabberProps} />
+        <div className="panel-desktop-actions">
+          <button
+            type="button"
+            className="close"
+            aria-label="Close search"
+            onClick={() => openPanel('none')}
+          >
+            ✕
+          </button>
+        </div>
         <form
           className="search-form"
           onSubmit={(e) => {
