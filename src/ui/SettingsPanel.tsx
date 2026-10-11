@@ -49,6 +49,8 @@ export function SettingsPanel() {
   const setReadingScale = useAppStore((s) => s.setReadingScale);
   const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
   const setSyntaxHighlight = useAppStore((s) => s.setSyntaxHighlight);
+  const holdToSelect = useAppStore((s) => s.holdToSelect);
+  const setHoldToSelect = useAppStore((s) => s.setHoldToSelect);
   const vocabMode = useAppStore((s) => s.vocabMode);
   const setVocabMode = useAppStore((s) => s.setVocabMode);
   const vocabMarkLexeme = useAppStore((s) => s.vocabMarkLexeme);
@@ -162,9 +164,9 @@ export function SettingsPanel() {
               over its English gloss — that&apos;s where vocabulary mode lives.
             </p>
             <p className="settings-note">
-              With vocabulary mode on, press and hold a word to mark it known and its gloss goes
-              away — press and hold again to unmark it. You can also mark or unmark a word from
-              its detail panel.
+              Tap a word for details and syntax highlighting. Press and hold to select text,
+              then adjust the selection handles and choose Copy. In Both view, only the original
+              text is copied. Mark or unmark known words from the word&apos;s detail panel.
             </p>
             <div className="settings-actions">
               <button
@@ -255,6 +257,25 @@ export function SettingsPanel() {
           </section>
 
           <section className="settings-section">
+            <h3>Press and hold</h3>
+            <p className="settings-note">
+              Select text is the default. Mark / gloss restores the previous behaviour: hold to
+              toggle known words in Gloss/Both with vocabulary mode on, or reveal the gloss otherwise.
+              Tapping always opens word details and syntax highlighting.
+            </p>
+            <div className="segmented" role="group" aria-label="Press and hold">
+              <button type="button" aria-pressed={holdToSelect}
+                className={holdToSelect ? 'on' : ''} onClick={() => setHoldToSelect(true)}>
+                Select text
+              </button>
+              <button type="button" aria-pressed={!holdToSelect}
+                className={!holdToSelect ? 'on' : ''} onClick={() => setHoldToSelect(false)}>
+                Mark / gloss
+              </button>
+            </div>
+          </section>
+
+          <section className="settings-section">
             <h3>Vocabulary</h3>
             <p className="settings-note">
               In Both mode, hide the gloss under words you&apos;ve marked known, so only the words
@@ -285,7 +306,7 @@ export function SettingsPanel() {
                 </button>
               </div>
             </div>
-            {vocabMode && (
+            {vocabMode && !holdToSelect && (
               <div className="settings-row">
                 <div className="label">
                   <span>Long-press marks</span>

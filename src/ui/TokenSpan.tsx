@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { ReadingToken } from '@/domain/schema';
 import type { DisplayMode } from '@/state/store';
 import { displayGloss } from './morph';
@@ -11,8 +11,8 @@ interface Props {
   synClass?: string;
   /** Vocabulary mode: the reader has marked this word known — hide its gloss. */
   known?: boolean;
-  /** What a long-press does: reveal the gloss, or mark the word known. */
-  longPressAction?: 'gloss' | 'mark';
+  /** Default: native text selection. Opt-in: reveal gloss / mark known. */
+  longPressAction?: 'select' | 'gloss' | 'mark';
   onMark?(token: ReadingToken): void;
   onSelect(token: ReadingToken): void;
 }
@@ -33,13 +33,10 @@ const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_PX = 10;
 
 /**
- * One tappable token. A tap opens the detail panel. A tap-hold (long press)
- * either reveals the English gloss (original mode) or, in gloss/both mode with
- * vocabulary mode on, toggles the word known (`longPressAction`). `after`
- * renders OUTSIDE the tappable area so the highlight hugs the word. Both mode
- * stacks the gloss under the surface; a known word keeps its slot but drops the
- * gloss, so it stays on the same row and the row only collapses when every word
- * in it is known.
+ * Tap opens word details and syntax highlighting. Default hold lets the
+ * browser select native text; legacy hold-to-mark/gloss is opt-in. Use an
+ * inline span with keyboard button semantics: native buttons are selection
+ * boundaries on mobile browsers. Punctuation stays outside the tap target.
  */
 export function TokenSpan({
   token,
@@ -47,7 +44,7 @@ export function TokenSpan({
   selected,
   synClass,
   known,
-  longPressAction = 'gloss',
+  longPressAction = 'select',
   onMark,
   onSelect,
 }: Props) {
@@ -58,6 +55,12 @@ export function TokenSpan({
   const timer = useRef<number | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const longPressed = useRef(false);
+  const selectionAtStart = useRef(false);
+  const nativeSelection = longPressAction === 'select';
+
+  useEffect(() => () => {
+    if (timer.current != null) clearTimeout(timer.current);
+  }, []);
 
   const clearTimer = () => {
     if (timer.current != null) {
@@ -67,13 +70,15 @@ export function TokenSpan({
   };
 
   const onPointerDown = (e: ReactPointerEvent) => {
+    if (e.button !== 0) return;
     longPressed.current = false;
+    selectionAtStart.current = nativeSelection && Boolean(window.getSelection()?.toString());
     start.current = { x: e.clientX, y: e.clientY };
     clearTimer();
     timer.current = window.setTimeout(() => {
       longPressed.current = true;
       if (longPressAction === 'mark') onMark?.(token);
-      else setShowGloss(true);
+      else if (longPressAction === 'gloss') setShowGloss(true);
     }, LONG_PRESS_MS);
   };
   const onPointerMove = (e: ReactPointerEvent) => {
@@ -84,6 +89,7 @@ export function TokenSpan({
         Math.abs(e.clientY - start.current.y) > MOVE_CANCEL_PX)
     ) {
       clearTimer();
+      longPressed.current = true;
     }
   };
   const endPress = () => {
@@ -96,14 +102,24 @@ export function TokenSpan({
       longPressed.current = false;
       return;
     }
+    // A drag/selection or the tap dismissing it must not open a panel and
+    // move the text under the native selection handles.
+    if (nativeSelection && (selectionAtStart.current || window.getSelection()?.toString())) return;
     onSelect(token);
   };
 
   return (
     <>
-      <button
-        type="button"
-        className={`token${selected ? ' selected' : ''}${synClass ? ` ${synClass}` : ''}${
+      <span
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(token);
+          }
+        }}
+        className={`token${nativeSelection ? ' selectable' : ''}${selected ? ' selected' : ''}${synClass ? ` ${synClass}` : ''}${
           known ? ' known' : ''
         }`}
         onClick={onClick}
@@ -112,7 +128,13 @@ export function TokenSpan({
         onPointerUp={endPress}
         onPointerLeave={endPress}
         onPointerCancel={endPress}
-        onContextMenu={(e) => e.preventDefault()}
+        onContextMenu={(e) => {
+          if (!nativeSelection) e.preventDefault();
+          else {
+            clearTimer();
+            longPressed.current = true;
+          }
+        }}
       >
         {mode === 'original' && surface}
         {mode === 'gloss' && <span className="token-gloss">{displayGloss(token)}</span>}
@@ -129,7 +151,7 @@ export function TokenSpan({
             {displayGloss(token)}
           </span>
         )}
-      </button>
+      </span>
       {mark && <span className={`after ${token.language}`}>{mark}</span>}
       {space && ' '}
     </>

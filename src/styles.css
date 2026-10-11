@@ -238,9 +238,25 @@ button {
   padding: 0 0.08em;
   margin: 0 -0.08em;
   line-height: inherit;
-  /* Long-press reveals the gloss; suppress the iOS text-callout/selection. */
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Legacy hold behaviour suppresses the native selection callout. */
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
   user-select: none;
+}
+.token.selectable, .after {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.token.selectable .under, .verse-num {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.token:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 /* Gloss bubble shown on tap-hold (src/ui/TokenSpan.tsx). */
 .gloss-bubble {
@@ -289,9 +305,6 @@ button {
   color: var(--muted);
   line-height: 1.2;
   direction: ltr;
-}
-.after {
-  user-select: none;
 }
 .sentinel {
   height: 1px;

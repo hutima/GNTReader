@@ -29,6 +29,7 @@ const SCALE_KEY = 'gr:readingScale';
 const SYNTAX_KEY = 'gr:syntax';
 const VOCAB_KEY = 'gr:vocab';
 const VOCAB_MARK_KEY = 'gr:vocabMarkLexeme';
+const HOLD_SELECT_KEY = 'gr:holdToSelect';
 const KNOWN_LEX_KEY = 'gr:knownLexemes';
 const KNOWN_PARSE_KEY = 'gr:knownParses';
 const TUTORIAL_KEY = 'gr:tutorialSeen';
@@ -101,6 +102,15 @@ function loadVocab(): boolean {
   try {
     // Default ON — vocabulary mode is the first-run reading experience.
     return localStorage.getItem(VOCAB_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function loadHoldToSelect(): boolean {
+  try {
+    // New and existing installations default to native selection.
+    return localStorage.getItem(HOLD_SELECT_KEY) !== 'off';
   } catch {
     return true;
   }
@@ -231,6 +241,8 @@ interface AppState {
   vocabMode: boolean;
   /** When true, a long-press marks the whole lexeme known; else just the parse. */
   vocabMarkLexeme: boolean;
+  /** Native text selection; off restores hold-to-mark / reveal-gloss. */
+  holdToSelect: boolean;
   /** Known dictionary headwords (lexeme keys) and known exact forms (parse keys). */
   knownLexemes: Set<string>;
   knownParses: Set<string>;
@@ -261,6 +273,7 @@ interface AppState {
   setSyntaxHighlight(on: boolean): void;
   setVocabMode(on: boolean): void;
   setVocabMarkLexeme(on: boolean): void;
+  setHoldToSelect(on: boolean): void;
   markKnown(scope: KnownScope, key: string): void;
   unmarkKnown(scope: KnownScope, key: string): void;
   resetKnown(): void;
@@ -301,6 +314,7 @@ export const useAppStore = create<AppState>((set) => ({
   syntaxHighlight: loadSyntax(),
   vocabMode: loadVocab(),
   vocabMarkLexeme: loadVocabMarkLexeme(),
+  holdToSelect: loadHoldToSelect(),
   knownLexemes: loadKnownSet(KNOWN_LEX_KEY),
   knownParses: loadKnownSet(KNOWN_PARSE_KEY),
   tutorialSeen: tutorialSeenInitial,
@@ -360,6 +374,10 @@ export const useAppStore = create<AppState>((set) => ({
   setVocabMode(on) {
     safeSet(VOCAB_KEY, on ? 'on' : 'off');
     set({ vocabMode: on });
+  },
+  setHoldToSelect(on) {
+    safeSet(HOLD_SELECT_KEY, on ? 'on' : 'off');
+    set({ holdToSelect: on });
   },
   setVocabMarkLexeme(on) {
     safeSet(VOCAB_MARK_KEY, on ? 'on' : 'off');

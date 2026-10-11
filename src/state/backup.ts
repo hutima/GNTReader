@@ -30,6 +30,7 @@ const SettingsSchema = z.object({
   syntax: z.boolean().optional(),
   vocabMode: z.boolean().optional(),
   vocabMarkLexeme: z.boolean().optional(),
+  holdToSelect: z.boolean().optional(),
 });
 
 const ProgressSchema = z.object({
@@ -64,6 +65,7 @@ export function buildBackup(): BackupFile {
       syntax: s.syntaxHighlight,
       vocabMode: s.vocabMode,
       vocabMarkLexeme: s.vocabMarkLexeme,
+      holdToSelect: s.holdToSelect,
     },
     progress: {
       // The visible (scrolled-to) chapter, not just the last navigated one —
@@ -123,6 +125,7 @@ export function applyBackup(backup: BackupFile): ApplyBackupSummary {
     if (settings.theme !== undefined) s.setTheme(settings.theme as ThemeChoice);
     if (settings.readingScale !== undefined) s.setReadingScale(settings.readingScale);
     if (settings.syntax !== undefined) s.setSyntaxHighlight(settings.syntax);
+    if (settings.holdToSelect !== undefined) s.setHoldToSelect(settings.holdToSelect);
     if (settings.vocabMode !== undefined) s.setVocabMode(settings.vocabMode);
     if (settings.vocabMarkLexeme !== undefined) s.setVocabMarkLexeme(settings.vocabMarkLexeme);
   }
