@@ -32,11 +32,11 @@ const STEPS: Step[] = [
   },
   {
     title: 'Mark words you know',
-    body: 'Tap a word to open its detail panel and mark it known. Its gloss disappears, so you practise recalling it yourself. Press and hold selects text for copying; in Both view, only the original text is copied.',
+    body: 'Quickly double-tap a word to mark it known, or tap once to open its detail panel. Its gloss disappears, so you practise recalling it yourself. Press and hold selects text for copying; in Both view, only the original text is copied.',
   },
   {
     title: 'Watch the helps fade',
-    body: 'As you mark more words known, fewer glosses remain and the text becomes more your own reading. Change your mind? Unmark the word from its detail panel.',
+    body: 'As you mark more words known, fewer glosses remain and the text becomes more your own reading. Change your mind? Double-tap again, or unmark the word from its detail panel.',
   },
   {
     title: 'Make it yours',

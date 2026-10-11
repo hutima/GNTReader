@@ -25,10 +25,26 @@ try {
   await words.first().waitFor();
   assert.equal(await words.first().evaluate((e) => getComputedStyle(e).userSelect), 'text');
   await words.nth(1).tap();
+  await page.locator('.token.selected').waitFor();
   assert.equal(await page.locator('.token.selected').count(), 1);
   assert.ok(await page.locator('.token[class*="syn-"]').count() > 1);
   await page.getByRole('button', { name: 'Close details' }).click();
   pass('default touch tap opens details and highlights syntax');
+
+  async function doubleTap(locator) {
+    await locator.tap();
+    await page.waitForTimeout(70);
+    await locator.tap();
+    await page.waitForTimeout(350);
+  }
+  await doubleTap(words.nth(1));
+  assert.equal(await words.nth(1).locator('.under').count(), 0);
+  assert.equal(await page.locator('.token.selected').count(), 0);
+  assert.equal(await page.locator('.detail').count(), 0);
+  await doubleTap(words.nth(1));
+  assert.equal(await words.nth(1).locator('.under').count(), 1);
+  assert.equal(await page.locator('.token.selected').count(), 0);
+  pass('quick touch double-tap marks and unmarks without opening details');
 
   const cdp = await context.newCDPSession(page);
   async function hold(locator) {
@@ -82,6 +98,13 @@ try {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   assert.equal(await page.locator('.gloss-bubble').count(), 0);
   pass('legacy Original-view hold reveals and dismisses gloss');
+  await doubleTap(words.nth(1));
+  assert.ok((await words.nth(1).getAttribute('class')).includes('known'));
+  assert.equal(await page.locator('.token.selected').count(), 0);
+  await doubleTap(words.nth(1));
+  assert.ok(!(await words.nth(1).getAttribute('class')).includes('known'));
+  pass('Original view double-tap toggles known while legacy hold reveals gloss');
+
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await holdSetting.getByRole('button', { name: 'Select text' }).click();
   await page.locator('.sheet-backdrop').click({ position: { x: 2, y: 2 } });
@@ -89,6 +112,7 @@ try {
   await words.first().waitFor();
   assert.equal(await words.first().evaluate((e) => getComputedStyle(e).userSelect), 'text');
   await words.nth(1).tap();
+  await page.locator('.token.selected').waitFor();
   assert.equal(await page.locator('.token.selected').count(), 1);
   pass('restoring selection survives reload and keeps tap syntax');
   await page.screenshot({ path: '/tmp/gnt-selection-verified.png' });

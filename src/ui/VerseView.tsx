@@ -18,7 +18,7 @@ interface Props {
   holdToSelect: boolean;
   knownLexemes: Set<string>;
   knownParses: Set<string>;
-  /** Toggle a word known (long-press in gloss/both mode). */
+  /** Toggle a word known (double-tap, or opt-in long-press in Gloss/Both). */
   onMark(token: ReadingToken): void;
   onSelect(token: ReadingToken): void;
 }
@@ -55,7 +55,7 @@ export const VerseView = memo(function VerseView({
             syntaxOn && selectedClauseId && t.syntax?.clauseId === selectedClauseId
               ? roleClass(t.syntax?.role)
               : undefined;
-          const known = vocabActive && isKnown(t, knownLexemes, knownParses);
+          const known = vocabOn && isKnown(t, knownLexemes, knownParses);
           return (
             <TokenSpan
               key={t.id}
@@ -65,6 +65,7 @@ export const VerseView = memo(function VerseView({
               synClass={synClass}
               known={known}
               longPressAction={longPressAction}
+              doubleTapMark={vocabOn}
               onMark={onMark}
               onSelect={onSelect}
             />

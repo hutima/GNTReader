@@ -166,7 +166,8 @@ export function SettingsPanel() {
             <p className="settings-note">
               Tap a word for details and syntax highlighting. Press and hold to select text,
               then adjust the selection handles and choose Copy. In Both view, only the original
-              text is copied. Mark or unmark known words from the word&apos;s detail panel.
+              text is copied. With vocabulary mode on, double-tap to mark or unmark a known
+              word, or use the word&apos;s detail panel.
             </p>
             <div className="settings-actions">
               <button
@@ -306,13 +307,13 @@ export function SettingsPanel() {
                 </button>
               </div>
             </div>
-            {vocabMode && !holdToSelect && (
+            {vocabMode && (
               <div className="settings-row">
                 <div className="label">
-                  <span>Long-press marks</span>
-                  <small>Tap-hold a word in Gloss/Both mode to mark it known</small>
+                  <span>Quick marking</span>
+                  <small>Double-tap to mark or unmark; also applies to hold-to-mark</small>
                 </div>
-                <div className="segmented" role="group" aria-label="Long-press marks">
+                <div className="segmented" role="group" aria-label="Quick marking">
                   <button
                     type="button"
                     aria-pressed={!vocabMarkLexeme}

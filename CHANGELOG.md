@@ -7,6 +7,12 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ### Changed
 
+- Quick double-tap now toggles known words with vocabulary mode on in every
+  reading view. Single touch taps wait 280 ms before opening syntax/details;
+  mouse and keyboard activation remain immediate. Hold-to-select is preserved.
+  Settings → Vocabulary → Quick marking chooses This form / Whole word for
+  both double-tap and legacy hold-to-mark. Original view underlines known words.
+
 - Press-and-hold selects text for copying by default, including existing
   installations. Settings → Press and hold → Mark / gloss restores the old
   hold-to-mark / reveal-gloss gestures. Normal taps still open word details

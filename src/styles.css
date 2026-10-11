@@ -240,6 +240,8 @@ button {
   line-height: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* Allow pan/pinch and long-press selection, without double-tap zoom. */
+  touch-action: manipulation;
   /* Legacy hold behaviour suppresses the native selection callout. */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -881,8 +883,9 @@ button.hit:active {
   border-color: var(--accent);
   color: var(--accent);
 }
-/* In gloss mode there is no gloss to drop, so a known word is marked with a
+/* In Original/Gloss mode there is no gloss to drop, so a known word has a
    subtle "learned" underline. (In both mode the vanished gloss is the cue.) */
+.verses.mode-original .token.known,
 .verses.mode-gloss .token.known {
   text-decoration: underline;
   text-decoration-style: dotted;
