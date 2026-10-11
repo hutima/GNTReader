@@ -69,7 +69,7 @@ export function Reader() {
   const unmarkKnown = useAppStore((s) => s.unmarkKnown);
   const selectedClauseId = selectedToken?.syntax?.clauseId ?? null;
 
-  // Long-press toggles a word known — the whole lexeme or just this parse,
+  // Double-tap (or opt-in long-press) toggles a word known — the whole lexeme or just this parse,
   // per the Settings preference (falls back to parse when there is no lemma).
   const toggleKnown = useCallback(
     (token: ReadingToken) => {
