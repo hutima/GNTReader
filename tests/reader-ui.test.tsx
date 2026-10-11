@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
@@ -122,4 +122,24 @@ describe('reader UI smoke', () => {
     expect(state.bookNum).toBe(1);
     expect(state.chapter).toBe(1);
   });
+});
+
+
+it('copies original text with punctuation, without interlinear glosses in Both view', async () => {
+  act(() => {
+    useAppStore.getState().navigate('gnt', 4, 1);
+    useAppStore.getState().setDisplayMode('both');
+  });
+  const { container } = render(<App />);
+  await screen.findByRole('heading', { name: 'John 1' });
+  const verse = container.querySelector('.verse-text')!;
+  const range = document.createRange();
+  range.selectNodeContents(verse);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(range);
+  const setData = vi.fn();
+  fireEvent.copy(verse, { clipboardData: { setData } });
+  expect(setData).toHaveBeenCalledWith('text/plain',
+    'Ἐν ἀρχῇ ἦν ὁ λόγος, καὶ ὁ λόγος ἦν πρὸς τὸν θεόν, καὶ θεὸς ἦν ὁ λόγος.');
+  window.getSelection()?.removeAllRanges();
 });

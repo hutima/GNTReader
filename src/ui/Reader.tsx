@@ -13,6 +13,7 @@ import {
 } from './anchor';
 import type { WidthAnchor } from './anchor';
 import { VerseView } from './VerseView';
+import { copyReaderSelection } from './textSelection';
 import { lexemeKey, parseKey } from './vocab';
 
 /**
@@ -59,6 +60,7 @@ export function Reader() {
   const selectToken = useAppStore((s) => s.selectToken);
   const clearTargetVerse = useAppStore((s) => s.clearTargetVerse);
   const syntaxHighlight = useAppStore((s) => s.syntaxHighlight);
+  const holdToSelect = useAppStore((s) => s.holdToSelect);
   const vocabMode = useAppStore((s) => s.vocabMode);
   const vocabMarkLexeme = useAppStore((s) => s.vocabMarkLexeme);
   const knownLexemes = useAppStore((s) => s.knownLexemes);
@@ -459,7 +461,7 @@ export function Reader() {
   }, [selectedTokenId]);
 
   return (
-    <div className="reader" ref={scrollerRef}>
+    <div className="reader" ref={scrollerRef} onCopy={copyReaderSelection}>
       {error && (
         <div className="notice error" role="alert">
           {error}
@@ -496,6 +498,7 @@ export function Reader() {
                     selectedClauseId={selectedClauseId}
                     syntaxOn={syntaxHighlight}
                     vocabOn={vocabMode}
+                    holdToSelect={holdToSelect}
                     knownLexemes={knownLexemes}
                     knownParses={knownParses}
                     onMark={toggleKnown}

@@ -144,3 +144,17 @@ describe('settings sheet', () => {
     await waitFor(() => expect(useAppStore.getState().panel).toBe('strongs'));
   });
 });
+
+
+it('defaults to Select text and persists the optional Mark / gloss setting', async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole('button', { name: 'Settings' }));
+  const group = screen.getByRole('group', { name: 'Press and hold' });
+  expect(within(group).getByRole('button', { name: 'Select text' })).toHaveAttribute('aria-pressed', 'true');
+  await user.click(within(group).getByRole('button', { name: 'Mark / gloss' }));
+  expect(useAppStore.getState().holdToSelect).toBe(false);
+  expect(localStorage.getItem('gr:holdToSelect')).toBe('off');
+  await user.click(within(group).getByRole('button', { name: 'Select text' }));
+  expect(localStorage.getItem('gr:holdToSelect')).toBe('on');
+});

@@ -13,6 +13,7 @@ One row per configuration axis. Precedence: built-in < config file < env var
 | Reading size | localStorage `gr:readingScale` | `1` | 0.8–1.8, 0.1 step (CSS var `--reading-scale`, not viewport zoom) | active | clamped on load | ui | 2026-07-06 |
 | Syntax highlight | localStorage `gr:syntax` | `on` | `on` \| `off` (tap-to-highlight clause by role) | active | default-on unless `off` | ui | 2026-07-06 |
 | Vocabulary mode | localStorage `gr:vocab` | `on` | `on` \| `off` (hide glosses for known words in Both mode) | active | default-on unless `off` | ui | 2026-07-19 |
+| Hold selects text | localStorage `gr:holdToSelect` | `on` | `on` (native selection) \| `off` (legacy mark/gloss) | active | default-on unless `off`, including upgrades | ui | 2026-10-11 |
 | Long-press marks lexeme | localStorage `gr:vocabMarkLexeme` | `off` | `on` (whole lexeme) \| `off` (just this parse) | active | default-off unless `on` | ui | 2026-07-06 |
 | Known words | localStorage `gr:knownLexemes` / `gr:knownParses` | `[]` | JSON string arrays of lexeme / parse keys | active | parsed w/ fallback to empty; Reset in Settings | ui | 2026-07-06 |
 | Last position | localStorage `gr:lastRef` | John 1 | any valid ref | active | zod parse w/ fallback | ui | 2026-07-06 |

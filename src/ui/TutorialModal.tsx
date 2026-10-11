@@ -32,15 +32,15 @@ const STEPS: Step[] = [
   },
   {
     title: 'Mark words you know',
-    body: 'Press and hold a word you recognize to mark it known. Its gloss disappears, so you practise recalling it yourself. You can also tap a word to open its detail panel and mark it known from there.',
+    body: 'Tap a word to open its detail panel and mark it known. Its gloss disappears, so you practise recalling it yourself. Press and hold selects text for copying; in Both view, only the original text is copied.',
   },
   {
     title: 'Watch the helps fade',
-    body: 'As you mark more words known, fewer glosses remain and the text becomes more your own reading. Change your mind? Press and hold the word again, or unmark it from its detail panel.',
+    body: 'As you mark more words known, fewer glosses remain and the text becomes more your own reading. Change your mind? Unmark the word from its detail panel.',
   },
   {
     title: 'Make it yours',
-    body: 'In Settings you can review your known words, switch vocabulary mode on or off, choose whether a long press marks the whole lexeme or just that form, and back up your progress. Happy reading!',
+    body: 'In Settings you can review your known words, switch vocabulary mode on or off, switch press-and-hold from text selection to marking known words or revealing glosses, and back up your progress. Happy reading!',
   },
 ];
 

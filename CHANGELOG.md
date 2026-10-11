@@ -7,6 +7,13 @@ at PR time, never reconstructed; cite FL-NNN / ADR-NNNN where relevant.
 
 ### Changed
 
+- Press-and-hold selects text for copying by default, including existing
+  installations. Settings → Press and hold → Mark / gloss restores the old
+  hold-to-mark / reveal-gloss gestures. Normal taps still open word details
+  and syntax highlighting; word-panel vocabulary controls remain available.
+  Copying from Both view excludes interlinear glosses and verse numbers.
+  The preference persists across reloads and backup export/import.
+
 - Strong's display glosses modernized (105 entries across the Greek and Hebrew
   lexicons, `public/lexicon/`). Archaic pronouns and forms are gone (`thou/thee/
   thine` → `you/yours`, `ye are` → `you are`, `verily` → `truly`, `lo!` →

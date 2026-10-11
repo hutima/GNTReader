@@ -64,6 +64,7 @@ describe('buildBackup', () => {
       syntax: false,
       vocabMode: true,
       vocabMarkLexeme: true,
+      holdToSelect: true,
     });
     expect(backup.progress?.lastRef).toEqual({ testament: 'ot', bookNum: 2, chapter: 3 });
     expect(backup.progress?.knownLexemes).toEqual(['grc|λόγος']);
